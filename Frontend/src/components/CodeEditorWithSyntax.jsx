@@ -52,6 +52,17 @@ function highlightCode(code, language) {
   return output || '&nbsp;';
 }
 
+const BRACKET_PAIRS = {
+  '(': ')',
+  '{': '}',
+  '[': ']',
+  '"': '"',
+  "'": "'",
+  '`': '`'
+};
+
+const CLOSING_CHARS = new Set([')', '}', ']', '"', "'", '`']);
+
 export const CodeEditorWithSyntax = ({ code, setCode, language }) => {
   const textareaRef = useRef(null);
   const preRef = useRef(null);
@@ -67,19 +78,163 @@ export const CodeEditorWithSyntax = ({ code, setCode, language }) => {
     }
   };
 
+  const updateCodeWithCursor = (newCode, cursorPosition) => {
+    setCode(newCode);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.selectionStart = cursorPosition;
+        textareaRef.current.selectionEnd = cursorPosition;
+      }
+    }, 0);
+  };
+
   const handleKeyDown = (e) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const isSelected = start !== end;
+    const prevChar = start > 0 ? code[start - 1] : '';
+    const nextChar = start < code.length ? code[start] : '';
+
+    // 1. TAB & SHIFT+TAB HANDLING (Indent / Unindent)
     if (e.key === 'Tab') {
       e.preventDefault();
-      const start = e.target.selectionStart;
-      const end = e.target.selectionEnd;
-      const newCode = code.substring(0, start) + "    " + code.substring(end);
-      setCode(newCode);
+      if (!isSelected) {
+        const newCode = code.substring(0, start) + '    ' + code.substring(end);
+        updateCodeWithCursor(newCode, start + 4);
+      } else {
+        // Multi-line indent/unindent
+        const lines = code.substring(start, end).split('\n');
+        const updated = e.shiftKey
+          ? lines.map(line => line.startsWith('    ') ? line.substring(4) : (line.startsWith(' ') ? line.trimStart() : line)).join('\n')
+          : lines.map(line => '    ' + line).join('\n');
+        const newCode = code.substring(0, start) + updated + code.substring(end);
+        setCode(newCode);
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.selectionStart = start;
+            textareaRef.current.selectionEnd = start + updated.length;
+          }
+        }, 0);
+      }
+      return;
+    }
 
+    // 2. COMMENT TOGGLE (Ctrl+/ or Cmd+/)
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+      e.preventDefault();
+      const commentPrefix = language === 'python' ? '# ' : '// ';
+      const lineStart = code.lastIndexOf('\n', start - 1) + 1;
+      let lineEnd = code.indexOf('\n', end);
+      if (lineEnd === -1) lineEnd = code.length;
+
+      const lines = code.substring(lineStart, lineEnd).split('\n');
+      const allCommented = lines.every(l => l.trim().startsWith(commentPrefix.trim()));
+
+      const modifiedLines = allCommented
+        ? lines.map(l => l.replace(new RegExp('^(\\s*)' + (language === 'python' ? '# ?' : '\\/\\/ ?')), '$1'))
+        : lines.map(l => {
+            const indentMatch = l.match(/^(\s*)/);
+            const indent = indentMatch ? indentMatch[1] : '';
+            return indent + commentPrefix + l.substring(indent.length);
+          });
+
+      const updatedBlock = modifiedLines.join('\n');
+      const newCode = code.substring(0, lineStart) + updatedBlock + code.substring(lineEnd);
+      setCode(newCode);
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 4;
+          textareaRef.current.selectionStart = lineStart;
+          textareaRef.current.selectionEnd = lineStart + updatedBlock.length;
         }
       }, 0);
+      return;
+    }
+
+    // 3. ENTER KEY HANDLING (Smart Indentation & Brace Expansion)
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const currentLineStart = code.lastIndexOf('\n', start - 1) + 1;
+      const currentLine = code.substring(currentLineStart, start);
+      const indentMatch = currentLine.match(/^(\s*)/);
+      let indent = indentMatch ? indentMatch[1] : '';
+
+      // Special Case: Enter pressed between { and }
+      if (prevChar === '{' && nextChar === '}') {
+        const extraIndent = '    ';
+        const insertion = '\n' + indent + extraIndent + '\n' + indent;
+        const newCode = code.substring(0, start) + insertion + code.substring(end);
+        updateCodeWithCursor(newCode, start + 1 + indent.length + extraIndent.length);
+        return;
+      }
+
+      // If line ends with opening brace/colon, increase indent
+      const trimmedLine = currentLine.trim();
+      if (trimmedLine.endsWith('{') || trimmedLine.endsWith(':') || trimmedLine.endsWith('(')) {
+        indent += '    ';
+      }
+
+      const insertion = '\n' + indent;
+      const newCode = code.substring(0, start) + insertion + code.substring(end);
+      updateCodeWithCursor(newCode, start + insertion.length);
+      return;
+    }
+
+    // 4. AUTO-CLOSING BRACKETS & QUOTES: ( ) { } [ ] " " ' ' ` `
+    if (BRACKET_PAIRS[e.key]) {
+      const closingPair = BRACKET_PAIRS[e.key];
+
+      // If text is highlighted, wrap it in the pair (VS Code feature)
+      if (isSelected) {
+        e.preventDefault();
+        const selectedText = code.substring(start, end);
+        const wrapped = e.key + selectedText + closingPair;
+        const newCode = code.substring(0, start) + wrapped + code.substring(end);
+        setCode(newCode);
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.selectionStart = start + 1;
+            textareaRef.current.selectionEnd = end + 1;
+          }
+        }, 0);
+        return;
+      }
+
+      // If quote typed and already right before matching quote, skip over it
+      if ((e.key === '"' || e.key === "'" || e.key === '`') && nextChar === e.key) {
+        e.preventDefault();
+        updateCodeWithCursor(code, start + 1);
+        return;
+      }
+
+      // Insert pair and place cursor in the middle
+      e.preventDefault();
+      const insertion = e.key + closingPair;
+      const newCode = code.substring(0, start) + insertion + code.substring(end);
+      updateCodeWithCursor(newCode, start + 1);
+      return;
+    }
+
+    // 5. SKIP-OVER CLOSING CHARACTERS: ) } ]
+    if (CLOSING_CHARS.has(e.key) && !isSelected) {
+      if (nextChar === e.key) {
+        e.preventDefault();
+        updateCodeWithCursor(code, start + 1);
+        return;
+      }
+    }
+
+    // 6. SMART BACKSPACE (Delete both brackets/quotes if cursor is between them)
+    if (e.key === 'Backspace' && !isSelected && start > 0) {
+      const pair = prevChar + nextChar;
+      if (pair === '()' || pair === '{}' || pair === '[]' || pair === '""' || pair === "''" || pair === '``') {
+        e.preventDefault();
+        const newCode = code.substring(0, start - 1) + code.substring(start + 1);
+        updateCodeWithCursor(newCode, start - 1);
+        return;
+      }
     }
   };
 

@@ -257,15 +257,30 @@ const PracticePage = () => {
       });
 
       const res = resp.data;
-      const isAccepted = res.status === "Accepted" || res.status === "Finished" || res.status === "Passed";
+      const isAccepted = res.status === "Accepted" || res.status === "Finished" || res.status === "Passed" || res.status === "SUCCESS";
       
+      const stdoutText = res.stdout || res.results?.[0]?.actual || res.output || '';
+      const stderrText = res.stderr || res.compile_output || '';
+      const memoryText = res.memory_kb ? `${(res.memory_kb / 1024).toFixed(1)} MB` : (res.results?.[0]?.memory_kb ? `${(res.results[0].memory_kb / 1024).toFixed(1)} MB` : "1.4 MB");
+      const runtimeMs = res.runtime_ms ?? res.results?.[0]?.execution_time_ms ?? 0;
+      const passedCount = res.passed_count ?? res.passed ?? (isAccepted ? (cases.length || 1) : 0);
+      const totalCount = res.total_count ?? res.total ?? cases.length;
+
+      let displayText = stdoutText;
+      if (stderrText) {
+        displayText = displayText ? `${displayText}\n\n[Compiler / Runtime Errors]:\n${stderrText}` : `[Compiler Error / Diagnostics]:\n${stderrText}`;
+      }
+      if (!displayText) {
+        displayText = isAccepted ? "Program executed successfully with no stdout." : "No output produced. Check your return statement or test cases.";
+      }
+
       setTestResult({
         status: res.status || (isAccepted ? "Accepted" : "Wrong Answer"),
-        runtime: `${res.runtime_ms ?? 0} ms`,
-        memory: "14.2 MB",
-        testCasesPassed: `${res.passed_count ?? 0} / ${res.total_count ?? cases.length} Passed`,
-        stdout: res.stdout + (res.stderr ? `\n\n[Errors/Diagnostics]:\n${res.stderr}` : ""),
-        isError: !isAccepted
+        runtime: `${runtimeMs} ms`,
+        memory: memoryText,
+        testCasesPassed: `${passedCount} / ${totalCount} Passed`,
+        stdout: displayText,
+        isError: !isAccepted || !!stderrText
       });
     } catch (err) {
       console.error(err);

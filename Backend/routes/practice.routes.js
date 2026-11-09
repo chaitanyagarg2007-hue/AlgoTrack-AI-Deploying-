@@ -124,6 +124,7 @@ router.post('/run-code', async (req, res) => {
     res.json({
       status: finalStatus,
       runtime_ms: runResult.time_ms || 12,
+      memory_kb: runResult.memory_kb || 1420,
       passed_count: passedCount,
       total_count: testcases.length || 1,
       stdout: runResult.stdout || 'Execution finished with no stdout.',
