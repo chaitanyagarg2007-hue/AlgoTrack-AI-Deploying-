@@ -1,0 +1,124 @@
+import React, { useRef } from 'react';
+import './CodeEditorWithSyntax.css';
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Single-pass deterministic lexers — guarantees zero HTML tag corruption or "token" leaks
+const CPP_TOKEN_REGEX = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(#include\b[^\n]*|#define\b[^\n]*)|(\b(?:int|long|double|float|char|bool|void|string|vector|pair|map|set|unordered_map|unordered_set|queue|stack|deque|priority_queue|TreeNode|ListNode|size_t)\b)|(\b(?:class|public|private|protected|struct|return|while|for|if|else|switch|case|break|continue|new|delete|nullptr|true|false|using|namespace|const|auto|template|typename)\b)|(\b\d+(?:\.\d+)?\b)|(\b[a-zA-Z_]\w*(?=\s*\())|([a-zA-Z_]\w*)|([^\s\w]+|\s+)/g;
+
+const PY_TOKEN_REGEX = /(#[^\n]*)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|"""[\s\S]*?"""|'''[\s\S]*?''')|(\b(?:import|from)\b[^\n]*)|(\b(?:int|float|str|bool|list|dict|set|tuple)\b)|(\b(?:def|class|return|while|for|if|elif|else|in|is|not|and|or|pass|as|try|except|finally|with|yield|lambda|self|True|False|None)\b)|(\b\d+(?:\.\d+)?\b)|(\b[a-zA-Z_]\w*(?=\s*\())|([a-zA-Z_]\w*)|([^\s\w]+|\s+)/g;
+
+function highlightCode(code, language) {
+  if (!code) return '&nbsp;';
+
+  const regex = language === 'python' ? PY_TOKEN_REGEX : CPP_TOKEN_REGEX;
+  regex.lastIndex = 0;
+
+  let output = '';
+  let match;
+
+  while ((match = regex.exec(code)) !== null) {
+    const [full, comment, str, prep, type, kw, num, fn] = match;
+
+    if (comment) {
+      output += `<span class="tok-comment">${escapeHtml(comment)}</span>`;
+    } else if (str) {
+      output += `<span class="tok-string">${escapeHtml(str)}</span>`;
+    } else if (prep) {
+      output += `<span class="tok-preprocessor">${escapeHtml(prep)}</span>`;
+    } else if (type) {
+      output += `<span class="tok-type">${escapeHtml(type)}</span>`;
+    } else if (kw) {
+      output += `<span class="tok-keyword">${escapeHtml(kw)}</span>`;
+    } else if (num) {
+      output += `<span class="tok-number">${escapeHtml(num)}</span>`;
+    } else if (fn) {
+      output += `<span class="tok-function">${escapeHtml(fn)}</span>`;
+    } else {
+      output += escapeHtml(full);
+    }
+  }
+
+  // Preserve trailing newline if user just pressed Enter
+  if (code.endsWith('\n')) {
+    output += '\n&nbsp;';
+  }
+
+  return output || '&nbsp;';
+}
+
+export const CodeEditorWithSyntax = ({ code, setCode, language }) => {
+  const textareaRef = useRef(null);
+  const preRef = useRef(null);
+  const gutterRef = useRef(null);
+
+  const handleScroll = (e) => {
+    if (preRef.current) {
+      preRef.current.scrollTop = e.target.scrollTop;
+      preRef.current.scrollLeft = e.target.scrollLeft;
+    }
+    if (gutterRef.current) {
+      gutterRef.current.scrollTop = e.target.scrollTop;
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = e.target.selectionStart;
+      const end = e.target.selectionEnd;
+      const newCode = code.substring(0, start) + "    " + code.substring(end);
+      setCode(newCode);
+
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 4;
+        }
+      }, 0);
+    }
+  };
+
+  const lineCount = Math.max((code || '').split('\n').length, 18);
+  const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1);
+
+  return (
+    <div className="syntax-editor-container">
+      {/* Line Numbers Gutter */}
+      <div className="syntax-editor-gutter" ref={gutterRef}>
+        {lineNumbers.map(n => (
+          <div key={n} className="gutter-line-num">{n}</div>
+        ))}
+      </div>
+
+      {/* Editor Body */}
+      <div className="syntax-editor-workspace">
+        {/* Background Highlighting Layer */}
+        <pre 
+          className="syntax-highlight-layer" 
+          ref={preRef}
+          aria-hidden="true"
+          dangerouslySetInnerHTML={{ __html: highlightCode(code, language) }}
+        />
+
+        {/* Foreground Transparent Textarea for Typing */}
+        <textarea
+          ref={textareaRef}
+          className="syntax-input-textarea"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          onScroll={handleScroll}
+          onKeyDown={handleKeyDown}
+          spellCheck="false"
+          autoCapitalize="off"
+          autoComplete="off"
+          autoCorrect="off"
+        />
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,89 @@
+.unified-dashboard {
+  min-height: 100vh;
+  background-color: #0b1120;
+  color: #f8fafc;
+}
+
+.platform-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.platform-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.platform-pill.leetcode {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.platform-pill.codeforces {
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+}
+
+.platform-pill.codechef {
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.platforms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.platform-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.platform-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.platform-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.platform-solved-num {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.btn-share {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn-share:hover {
+  background: #334155;
+}

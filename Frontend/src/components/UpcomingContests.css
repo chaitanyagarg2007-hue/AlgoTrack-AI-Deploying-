@@ -1,0 +1,175 @@
+/* ==========================================================================
+   Upcoming Contests Calendar CSS
+   ========================================================================== */
+
+.contests-section {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.contests-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.contests-filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filter-pill-btn {
+  background: #18181b;
+  color: #a1a1aa;
+  border: 1px solid #27272a;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-pill-btn:hover {
+  background: #27272a;
+  color: #fff;
+}
+
+.filter-pill-btn.active {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #60a5fa;
+}
+
+.contests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.contest-card {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.contest-card:hover {
+  transform: translateY(-2px);
+  border-color: #3b82f6;
+}
+
+.contest-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.platform-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.platform-tag.leetcode {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.platform-tag.codeforces {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.platform-tag.codechef {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.platform-tag.atcoder {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.starts-in-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.contest-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f4f4f5;
+  line-height: 1.4;
+  margin: 4px 0 0;
+}
+
+.contest-time-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.84rem;
+  color: #94a3b8;
+}
+
+.contest-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.btn-contest-link {
+  flex: 1;
+  background: #3b82f6;
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.btn-contest-link:hover {
+  background: #2563eb;
+}
+
+.btn-cal {
+  background: #27272a;
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  border: 1px solid #3f3f46;
+  transition: all 0.15s ease;
+}
+
+.btn-cal:hover {
+  background: #3f3f46;
+  color: #fff;
+}

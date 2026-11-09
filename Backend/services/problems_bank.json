@@ -1,0 +1,374 @@
+[
+  {
+    "id": "two-sum-ii",
+    "title": "Two Sum II - Input Array Is Sorted",
+    "topic": "Two Pointers",
+    "difficulty": "Medium",
+    "constraints": "2 <= numbers.length <= 3 * 10^4, -1000 <= numbers[i] <= 1000",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "Given a 1-indexed array of integers numbers that is already sorted in non-decreasing order, find two numbers such that they add up to a specific target number. Return the indices of the two numbers added by one as an integer array [index1, index2].",
+    "sample_input": "numbers = [2, 7, 11, 15], target = 9",
+    "sample_output": "[1, 2]",
+    "testcases": [
+      {
+        "input": "numbers = [2, 7, 11, 15], target = 9",
+        "expected": "[1, 2]"
+      },
+      {
+        "input": "numbers = [2, 3, 4], target = 6",
+        "expected": "[1, 3]"
+      },
+      {
+        "input": "numbers = [-1, 0], target = -1",
+        "expected": "[1, 2]"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    vector<int> twoSum(vector<int>& numbers, int target) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Hint: Array is sorted. Brute force is O(N^2).\n        // Try Two Pointers for optimal O(N) time!\n        // ==========================================\n        \n        return {};\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<int> nums = {2, 7, 11, 15};\n    auto res = sol.twoSum(nums, 9);\n    if (!res.empty()) cout << \"[\" << res[0] << \", \" << res[1] << \"]\" << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def twoSum(self, numbers: list[int], target: int) -> list[int]:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Hint: Array is sorted. Brute force is O(N^2).\n        # Try Two Pointers for optimal O(N) time!\n        # ==========================================\n        pass\n\n# Test\nsol = Solution()\nprint(sol.twoSum([2, 7, 11, 15], 9))"
+    },
+    "solution_code": {
+      "cpp": "// Optimal Two Pointers O(N) Time, O(1) Space\nvector<int> twoSum(vector<int>& numbers, int target) {\n    int left = 0, right = numbers.size() - 1;\n    while (left < right) {\n        int sum = numbers[left] + numbers[right];\n        if (sum == target) return {left + 1, right + 1};\n        else if (sum < target) left++;\n        else right--;\n    }\n    return {};\n}",
+      "python": "# Optimal Two Pointers O(N) Time, O(1) Space\ndef twoSum(self, numbers: list[int], target: int) -> list[int]:\n    left, right = 0, len(numbers) - 1\n    while left < right:\n        cur = numbers[left] + numbers[right]\n        if cur == target:\n            return [left + 1, right + 1]\n        elif cur < target:\n            left += 1\n        else:\n            right -= 1\n    return []"
+    }
+  },
+  {
+    "id": "container-with-most-water",
+    "title": "Container With Most Water",
+    "topic": "Two Pointers",
+    "difficulty": "Medium",
+    "constraints": "n == height.length, 2 <= n <= 10^5, 0 <= height[i] <= 10^4",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "You are given an integer array height of length n. Find two lines that together with the x-axis form a container, such that the container contains the most water. Return the maximum amount of water a container can store.",
+    "sample_input": "height = [1,8,6,2,5,4,8,3,7]",
+    "sample_output": "49",
+    "testcases": [
+      {
+        "input": "height = [1,8,6,2,5,4,8,3,7]",
+        "expected": "49"
+      },
+      {
+        "input": "height = [1,1]",
+        "expected": "1"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nclass Solution {\npublic:\n    int maxArea(vector<int>& height) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Notice N = 10^5. An O(N^2) nested loop will TLE!\n        // Start two pointers at the boundaries.\n        // ==========================================\n        \n        return 0;\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<int> h = {1, 8, 6, 2, 5, 4, 8, 3, 7};\n    cout << sol.maxArea(h) << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def maxArea(self, height: list[int]) -> int:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Notice N = 10^5. An O(N^2) nested loop will TLE!\n        # Start two pointers at the boundaries.\n        # ==========================================\n        pass\n\nsol = Solution()\nprint(sol.maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7]))"
+    },
+    "solution_code": {
+      "cpp": "int maxArea(vector<int>& height) {\n    int left = 0, right = height.size() - 1;\n    int max_water = 0;\n    while (left < right) {\n        int w = right - left;\n        int h = min(height[left], height[right]);\n        max_water = max(max_water, w * h);\n        if (height[left] < height[right]) left++;\n        else right--;\n    }\n    return max_water;\n}",
+      "python": "def maxArea(self, height: list[int]) -> int:\n    left, right = 0, len(height) - 1\n    max_water = 0\n    while left < right:\n        w = right - left\n        h = min(height[left], height[right])\n        max_water = max(max_water, w * h)\n        if height[left] < height[right]:\n            left += 1\n        else:\n            right -= 1\n    return max_water"
+    }
+  },
+  {
+    "id": "coin-change",
+    "title": "Coin Change (Fewest Coins)",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "constraints": "1 <= coins.length <= 12, 1 <= coins[i] <= 2^31 - 1, 0 <= amount <= 10^4",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "You are given an integer array coins representing coins of different denominations and an integer amount. Return the fewest number of coins that you need to make up that amount. If that amount of money cannot be made up by any combination, return -1.",
+    "sample_input": "coins = [1, 2, 5], amount = 11",
+    "sample_output": "3",
+    "testcases": [
+      {
+        "input": "coins = [1, 2, 5], amount = 11",
+        "expected": "3"
+      },
+      {
+        "input": "coins = [2], amount = 3",
+        "expected": "-1"
+      },
+      {
+        "input": "coins = [1], amount = 0",
+        "expected": "0"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    int coinChange(vector<int>& coins, int amount) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Plain recursion will TLE with exponential calls!\n        // Use DP array dp[i] = min coins for amount i.\n        // ==========================================\n        \n        return -1;\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<int> coins = {1, 2, 5};\n    cout << sol.coinChange(coins, 11) << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def coinChange(self, coins: list[int], amount: int) -> int:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Plain recursion will TLE with exponential calls!\n        # Use DP array dp[i] = min coins for amount i.\n        # ==========================================\n        pass\n\nsol = Solution()\nprint(sol.coinChange([1, 2, 5], 11))"
+    },
+    "solution_code": {
+      "cpp": "int coinChange(vector<int>& coins, int amount) {\n    vector<int> dp(amount + 1, 1e9);\n    dp[0] = 0;\n    for (int i = 1; i <= amount; i++) {\n        for (int c : coins) {\n            if (i - c >= 0) dp[i] = min(dp[i], dp[i - c] + 1);\n        }\n    }\n    return dp[amount] >= 1e9 ? -1 : dp[amount];\n}",
+      "python": "def coinChange(self, coins: list[int], amount: int) -> int:\n    dp = [float('inf')] * (amount + 1)\n    dp[0] = 0\n    for i in range(1, amount + 1):\n        for c in coins:\n            if i - c >= 0:\n                dp[i] = min(dp[i], dp[i - c] + 1)\n    return dp[amount] if dp[amount] != float('inf') else -1"
+    }
+  },
+  {
+    "id": "climbing-stairs",
+    "title": "Climbing Stairs",
+    "topic": "Dynamic Programming",
+    "difficulty": "Easy",
+    "constraints": "1 <= n <= 45",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "You are climbing a staircase. It takes n steps to reach the top. Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?",
+    "sample_input": "n = 3",
+    "sample_output": "3",
+    "testcases": [
+      {
+        "input": "n = 2",
+        "expected": "2"
+      },
+      {
+        "input": "n = 3",
+        "expected": "3"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\nusing namespace std;\n\nclass Solution {\npublic:\n    int climbStairs(int n) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Think Fibonacci! f(n) = f(n-1) + f(n-2)\n        // ==========================================\n        \n        return 0;\n    }\n};\n\nint main() {\n    Solution sol;\n    cout << sol.climbStairs(5) << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def climbStairs(self, n: int) -> int:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Think Fibonacci! f(n) = f(n-1) + f(n-2)\n        # ==========================================\n        pass\n\nsol = Solution()\nprint(sol.climbStairs(5))"
+    },
+    "solution_code": {
+      "cpp": "int climbStairs(int n) {\n    if (n <= 2) return n;\n    int a = 1, b = 2;\n    for (int i = 3; i <= n; i++) {\n        int next = a + b;\n        a = b;\n        b = next;\n    }\n    return b;\n}",
+      "python": "def climbStairs(self, n: int) -> int:\n    if n <= 2: return n\n    a, b = 1, 2\n    for _ in range(3, n + 1):\n        a, b = b, a + b\n    return b"
+    }
+  },
+  {
+    "id": "house-robber",
+    "title": "House Robber",
+    "topic": "Dynamic Programming",
+    "difficulty": "Medium",
+    "constraints": "1 <= nums.length <= 100, 0 <= nums[i] <= 400",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "You are planning to rob houses along a street. Adjacent houses have security systems connected; it will alert the police if two adjacent houses are broken into on the same night. Return the maximum amount of money you can rob tonight without alerting the police.",
+    "sample_input": "nums = [1, 2, 3, 1]",
+    "sample_output": "4",
+    "testcases": [
+      {
+        "input": "nums = [1, 2, 3, 1]",
+        "expected": "4"
+      },
+      {
+        "input": "nums = [2, 7, 9, 3, 1]",
+        "expected": "12"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nclass Solution {\npublic:\n    int rob(vector<int>& nums) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Recurrence: rob(i) = max(rob(i-1), rob(i-2) + nums[i])\n        // ==========================================\n        \n        return 0;\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<int> nums = {2, 7, 9, 3, 1};\n    cout << sol.rob(nums) << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def rob(self, nums: list[int]) -> int:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Recurrence: rob(i) = max(rob(i-1), rob(i-2) + nums[i])\n        # ==========================================\n        pass\n\nsol = Solution()\nprint(sol.rob([2, 7, 9, 3, 1]))"
+    },
+    "solution_code": {
+      "cpp": "int rob(vector<int>& nums) {\n    int rob1 = 0, rob2 = 0;\n    for (int n : nums) {\n        int temp = max(n + rob1, rob2);\n        rob1 = rob2;\n        rob2 = temp;\n    }\n    return rob2;\n}",
+      "python": "def rob(self, nums: list[int]) -> int:\n    rob1, rob2 = 0, 0\n    for n in nums:\n        temp = max(n + rob1, rob2)\n        rob1 = rob2\n        rob2 = temp\n    return rob2"
+    }
+  },
+  {
+    "id": "max-subarray-sum",
+    "title": "Maximum Subarray (Kadane's Algorithm)",
+    "topic": "Greedy & Arrays",
+    "difficulty": "Medium",
+    "constraints": "1 <= nums.length <= 10^5, -10^4 <= nums[i] <= 10^4",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "Given an integer array nums, find the subarray with the largest sum, and return its sum.",
+    "sample_input": "nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]",
+    "sample_output": "6",
+    "testcases": [
+      {
+        "input": "nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]",
+        "expected": "6"
+      },
+      {
+        "input": "nums = [1]",
+        "expected": "1"
+      },
+      {
+        "input": "nums = [5, 4, -1, 7, 8]",
+        "expected": "23"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nclass Solution {\npublic:\n    int maxSubArray(vector<int>& nums) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Notice N = 10^5. Checking all O(N^2) subarrays will TLE!\n        // Track current sum and reset to 0 if it drops below 0.\n        // ==========================================\n        \n        return 0;\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<int> nums = {-2, 1, -3, 4, -1, 2, 1, -5, 4};\n    cout << sol.maxSubArray(nums) << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def maxSubArray(self, nums: list[int]) -> int:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Notice N = 10^5. Checking all O(N^2) subarrays will TLE!\n        # Track current sum and reset to 0 if it drops below 0.\n        # ==========================================\n        pass\n\nsol = Solution()\nprint(sol.maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4]))"
+    },
+    "solution_code": {
+      "cpp": "int maxSubArray(vector<int>& nums) {\n    int max_sum = nums[0], cur_sum = 0;\n    for (int x : nums) {\n        cur_sum = max(x, cur_sum + x);\n        max_sum = max(max_sum, cur_sum);\n    }\n    return max_sum;\n}",
+      "python": "def maxSubArray(self, nums: list[int]) -> int:\n    max_sum = nums[0]\n    cur_sum = 0\n    for x in nums:\n        cur_sum = max(x, cur_sum + x)\n        max_sum = max(max_sum, cur_sum)\n    return max_sum"
+    }
+  },
+  {
+    "id": "binary-search",
+    "title": "Binary Search",
+    "topic": "Binary Search",
+    "difficulty": "Easy",
+    "constraints": "1 <= nums.length <= 10^4, -10^4 < nums[i], target < 10^4, All integers are unique and sorted.",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums. If target exists, then return its index. Otherwise, return -1. You must write an algorithm with O(log n) runtime complexity.",
+    "sample_input": "nums = [-1, 0, 3, 5, 9, 12], target = 9",
+    "sample_output": "4",
+    "testcases": [
+      {
+        "input": "nums = [-1, 0, 3, 5, 9, 12], target = 9",
+        "expected": "4"
+      },
+      {
+        "input": "nums = [-1, 0, 3, 5, 9, 12], target = 2",
+        "expected": "-1"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    int search(vector<int>& nums, int target) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Target: O(log N) time with low and high pointers.\n        // ==========================================\n        \n        return -1;\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<int> nums = {-1, 0, 3, 5, 9, 12};\n    cout << sol.search(nums, 9) << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def search(self, nums: list[int], target: int) -> int:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Target: O(log N) time with low and high pointers.\n        # ==========================================\n        pass\n\nsol = Solution()\nprint(sol.search([-1, 0, 3, 5, 9, 12], 9))"
+    },
+    "solution_code": {
+      "cpp": "int search(vector<int>& nums, int target) {\n    int left = 0, right = nums.size() - 1;\n    while (left <= right) {\n        int mid = left + (right - left) / 2;\n        if (nums[mid] == target) return mid;\n        else if (nums[mid] < target) left = mid + 1;\n        else right = mid - 1;\n    }\n    return -1;\n}",
+      "python": "def search(self, nums: list[int], target: int) -> int:\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        elif nums[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1"
+    }
+  },
+  {
+    "id": "search-rotated-array",
+    "title": "Search in Rotated Sorted Array",
+    "topic": "Binary Search",
+    "difficulty": "Medium",
+    "constraints": "1 <= nums.length <= 5000, -10^4 <= nums[i] <= 10^4, all values unique.",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "Given the array nums after the possible rotation and an integer target, return the index of target if it is in nums, or -1 if it is not in nums. You must write an algorithm with O(log n) runtime complexity.",
+    "sample_input": "nums = [4, 5, 6, 7, 0, 1, 2], target = 0",
+    "sample_output": "4",
+    "testcases": [
+      {
+        "input": "nums = [4, 5, 6, 7, 0, 1, 2], target = 0",
+        "expected": "4"
+      },
+      {
+        "input": "nums = [4, 5, 6, 7, 0, 1, 2], target = 3",
+        "expected": "-1"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    int search(vector<int>& nums, int target) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // One half is always sorted! Identify which half is sorted.\n        // ==========================================\n        \n        return -1;\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<int> nums = {4, 5, 6, 7, 0, 1, 2};\n    cout << sol.search(nums, 0) << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def search(self, nums: list[int], target: int) -> int:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # One half is always sorted! Identify which half is sorted.\n        # ==========================================\n        pass\n\nsol = Solution()\nprint(sol.search([4, 5, 6, 7, 0, 1, 2], 0))"
+    },
+    "solution_code": {
+      "cpp": "int search(vector<int>& nums, int target) {\n    int left = 0, right = nums.size() - 1;\n    while (left <= right) {\n        int mid = left + (right - left) / 2;\n        if (nums[mid] == target) return mid;\n        if (nums[left] <= nums[mid]) {\n            if (nums[left] <= target && target < nums[mid]) right = mid - 1;\n            else left = mid + 1;\n        } else {\n            if (nums[mid] < target && target <= nums[right]) left = mid + 1;\n            else right = mid - 1;\n        }\n    }\n    return -1;\n}",
+      "python": "def search(self, nums: list[int], target: int) -> int:\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target: return mid\n        if nums[left] <= nums[mid]:\n            if nums[left] <= target < nums[mid]: right = mid - 1\n            else: left = mid + 1\n        else:\n            if nums[mid] < target <= nums[right]: left = mid + 1\n            else: right = mid - 1\n    return -1"
+    }
+  },
+  {
+    "id": "invert-binary-tree",
+    "title": "Invert Binary Tree",
+    "topic": "Graphs & Trees",
+    "difficulty": "Easy",
+    "constraints": "The number of nodes in the tree is in the range [0, 100], -100 <= Node.val <= 100",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "Given the root of a binary tree, invert the tree, and return its root.",
+    "sample_input": "root = [4, 2, 7, 1, 3, 6, 9]",
+    "sample_output": "[4, 7, 2, 9, 6, 3, 1]",
+    "testcases": [
+      {
+        "input": "root = [4, 2, 7, 1, 3, 6, 9]",
+        "expected": "[4, 7, 2, 9, 6, 3, 1]"
+      },
+      {
+        "input": "root = [2, 1, 3]",
+        "expected": "[2, 3, 1]"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\nusing namespace std;\n\nstruct TreeNode {\n    int val;\n    TreeNode *left;\n    TreeNode *right;\n    TreeNode(int x) : val(x), left(NULL), right(NULL) {}\n};\n\nclass Solution {\npublic:\n    TreeNode* invertTree(TreeNode* root) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Base case: if root is null, return null.\n        // Swap left and right subtrees recursively.\n        // ==========================================\n        \n        return root;\n    }\n};\n\nint main() {\n    TreeNode* root = new TreeNode(4);\n    root->left = new TreeNode(2);\n    root->right = new TreeNode(7);\n    Solution sol;\n    sol.invertTree(root);\n    cout << \"Tree inverted successfully!\" << endl;\n    return 0;\n}",
+      "python": "class TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n\nclass Solution:\n    def invertTree(self, root: TreeNode) -> TreeNode:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Base case: if root is null, return null.\n        # Swap left and right subtrees recursively.\n        # ==========================================\n        pass"
+    },
+    "solution_code": {
+      "cpp": "TreeNode* invertTree(TreeNode* root) {\n    if (!root) return nullptr;\n    TreeNode* temp = root->left;\n    root->left = invertTree(root->right);\n    root->right = invertTree(temp);\n    return root;\n}",
+      "python": "def invertTree(self, root: TreeNode) -> TreeNode:\n    if not root: return None\n    root.left, root.right = self.invertTree(root.right), self.invertTree(root.left)\n    return root"
+    }
+  },
+  {
+    "id": "number-of-islands",
+    "title": "Number of Islands",
+    "topic": "Graphs & Trees",
+    "difficulty": "Medium",
+    "constraints": "m == grid.length, n == grid[i].length, 1 <= m, n <= 300, grid[i][j] is '0' or '1'.",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "Given an m x n 2D binary grid grid which represents a map of '1's (land) and '0's (water), return the number of islands. An island is surrounded by water and is formed by connecting adjacent lands horizontally or vertically.",
+    "sample_input": "grid = [['1','1','0'],['1','1','0'],['0','0','1']]",
+    "sample_output": "2",
+    "testcases": [
+      {
+        "input": "grid = [['1','1','0'],['1','1','0'],['0','0','1']]",
+        "expected": "2"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    int numIslands(vector<vector<char>>& grid) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Traverse the grid. When encountering '1', trigger\n        // DFS/BFS to sink the connected island ('1' -> '0').\n        // ==========================================\n        \n        return 0;\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<vector<char>> grid = {\n        {'1','1','0'},\n        {'1','1','0'},\n        {'0','0','1'}\n    };\n    cout << sol.numIslands(grid) << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def numIslands(self, grid: list[list[str]]) -> int:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Traverse the grid. When encountering '1', trigger\n        # DFS/BFS to sink the connected island ('1' -> '0').\n        # ==========================================\n        pass"
+    },
+    "solution_code": {
+      "cpp": "void dfs(vector<vector<char>>& grid, int r, int c) {\n    if (r < 0 || r >= grid.size() || c < 0 || c >= grid[0].size() || grid[r][c] != '1') return;\n    grid[r][c] = '0';\n    dfs(grid, r + 1, c);\n    dfs(grid, r - 1, c);\n    dfs(grid, r, c + 1);\n    dfs(grid, r, c - 1);\n}\n\nint numIslands(vector<vector<char>>& grid) {\n    int count = 0;\n    for (int i = 0; i < grid.size(); i++) {\n        for (int j = 0; j < grid[0].size(); j++) {\n            if (grid[i][j] == '1') {\n                count++;\n                dfs(grid, i, j);\n            }\n        }\n    }\n    return count;\n}",
+      "python": "def numIslands(self, grid: list[list[str]]) -> int:\n    if not grid: return 0\n    rows, cols = len(grid), len(grid[0])\n    count = 0\n    def dfs(r, c):\n        if r < 0 or r >= rows or c < 0 or c >= cols or grid[r][c] != '1': return\n        grid[r][c] = '0'\n        dfs(r + 1, c)\n        dfs(r - 1, c)\n        dfs(r, c + 1)\n        dfs(r, c - 1)\n    for r in range(rows):\n        for c in range(cols):\n            if grid[r][c] == '1':\n                count += 1\n                dfs(r, c)\n    return count"
+    }
+  },
+  {
+    "id": "longest-substring-without-repeating",
+    "title": "Longest Substring Without Repeating Characters",
+    "topic": "Two Pointers",
+    "difficulty": "Medium",
+    "constraints": "0 <= s.length <= 5 * 10^4, s consists of English letters, digits, symbols and spaces.",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "Given a string s, find the length of the longest substring without repeating characters.",
+    "sample_input": "s = \"abcabcbb\"",
+    "sample_output": "3 (Explanation: The answer is \"abc\", with the length of 3.)",
+    "testcases": [
+      {
+        "input": "s = \"abcabcbb\"",
+        "expected": "3"
+      },
+      {
+        "input": "s = \"bbbbb\"",
+        "expected": "1"
+      },
+      {
+        "input": "s = \"pwwkew\"",
+        "expected": "3"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <string>\n#include <unordered_set>\n#include <algorithm>\nusing namespace std;\n\nclass Solution {\npublic:\n    int lengthOfLongestSubstring(string s) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Use Sliding Window with an unordered_set.\n        // Shrink the window when duplicate is found.\n        // ==========================================\n        \n        return 0;\n    }\n};\n\nint main() {\n    Solution sol;\n    cout << sol.lengthOfLongestSubstring(\"abcabcbb\") << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Use Sliding Window with an unordered_set.\n        # Shrink the window when duplicate is found.\n        # ==========================================\n        pass\n\nsol = Solution()\nprint(sol.lengthOfLongestSubstring(\"abcabcbb\"))"
+    },
+    "solution_code": {
+      "cpp": "int lengthOfLongestSubstring(string s) {\n    unordered_set<char> chars;\n    int left = 0, max_len = 0;\n    for (int right = 0; right < s.length(); right++) {\n        while (chars.count(s[right])) {\n            chars.erase(s[left++]);\n        }\n        chars.insert(s[right]);\n        max_len = max(max_len, right - left + 1);\n    }\n    return max_len;\n}",
+      "python": "def lengthOfLongestSubstring(self, s: str) -> int:\n    char_set = set()\n    left = 0\n    max_len = 0\n    for right in range(len(s)):\n        while s[right] in char_set:\n            char_set.remove(s[left])\n            left += 1\n        char_set.add(s[right])\n        max_len = max(max_len, right - left + 1)\n    return max_len"
+    }
+  },
+  {
+    "id": "jump-game",
+    "title": "Jump Game",
+    "topic": "Greedy & Arrays",
+    "difficulty": "Medium",
+    "constraints": "1 <= nums.length <= 10^4, 0 <= nums[i] <= 10^5",
+    "time_limit": "1.0s",
+    "memory_limit": "256MB",
+    "description": "You are given an integer array nums. You are initially positioned at the array's first index, and each element in the array represents your maximum jump length at that position. Return true if you can reach the last index, or false otherwise.",
+    "sample_input": "nums = [2, 3, 1, 1, 4]",
+    "sample_output": "true",
+    "testcases": [
+      {
+        "input": "nums = [2, 3, 1, 1, 4]",
+        "expected": "true"
+      },
+      {
+        "input": "nums = [3, 2, 1, 0, 4]",
+        "expected": "false"
+      }
+    ],
+    "starter_code": {
+      "cpp": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nclass Solution {\npublic:\n    bool canJump(vector<int>& nums) {\n        // ==========================================\n        // \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        // Track the maximum reachable index greedily.\n        // ==========================================\n        \n        return false;\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<int> nums = {2, 3, 1, 1, 4};\n    cout << (sol.canJump(nums) ? \"true\" : \"false\") << endl;\n    return 0;\n}",
+      "python": "class Solution:\n    def canJump(self, nums: list[int]) -> bool:\n        # ==========================================\n        # \u270d\ufe0f WRITE YOUR SOLUTION BELOW:\n        # Track the maximum reachable index greedily.\n        # ==========================================\n        pass\n\nsol = Solution()\nprint(sol.canJump([2, 3, 1, 1, 4]))"
+    },
+    "solution_code": {
+      "cpp": "bool canJump(vector<int>& nums) {\n    int max_reach = 0;\n    for (int i = 0; i < nums.size(); i++) {\n        if (i > max_reach) return false;\n        max_reach = max(max_reach, i + nums[i]);\n    }\n    return true;\n}",
+      "python": "def canJump(self, nums: list[int]) -> bool:\n    max_reach = 0\n    for i, jump in enumerate(nums):\n        if i > max_reach: return False\n        max_reach = max(max_reach, i + jump)\n    return True"
+    }
+  }
+]
