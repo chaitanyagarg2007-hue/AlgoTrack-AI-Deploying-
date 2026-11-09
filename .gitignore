@@ -1,23 +1,28 @@
-# Python
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.venv/
-venv/
-Backend/venv/
-*.db
-
-# Frontend
+# Dependencies
+node_modules/
+*/node_modules/
+Backend/node_modules/
 Frontend/node_modules/
+
+# Production builds
+dist/
 Frontend/dist/
 Frontend/.vite/
 
-# Environment files
+# Databases
+*.db
+algotrack.db
+
+# Environment variables
 .env
+.env.local
 .env.*
 !.env.example
 
-# OS and editor files
+# OS & Editor
 .DS_Store
 .vscode/
 .idea/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
