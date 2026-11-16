@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { executeCodeInSandbox } from '../services/runner.js';
 import { fetchLeetCodePOTD, getUniversalProblemset } from '../services/problemset.js';
+import { getDb } from '../db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -193,6 +194,148 @@ router.post('/run-code', async (req, res) => {
       total_count: testcases.length || 1,
       stdout: '',
       stderr: `Code execution engine error: ${err.message}`
+    });
+  }
+});
+
+// =============================================================================
+// 4. SUBMIT CODE (Runs Full Hidden Test Cases & Records Solved Status)
+// =============================================================================
+router.post('/submit-code', async (req, res) => {
+  const { code, language = 'cpp', problem_id = 'custom', problem_title = 'Problem', platform = 'LeetCode', testcases = [] } = req.body;
+
+  if (!code || !code.trim()) {
+    return res.status(400).json({ detail: 'Code cannot be empty.' });
+  }
+
+  // Combine public testcases with problem bank hidden testcases if matched
+  let allTestCases = [...testcases];
+  const matchedBankProblem = problemsData.find(p => p.id === problem_id || p.title === problem_title);
+  if (matchedBankProblem?.testcases?.length) {
+    const existingInputs = new Set(allTestCases.map(tc => tc.input));
+    for (const tc of matchedBankProblem.testcases) {
+      if (!existingInputs.has(tc.input)) {
+        allTestCases.push(tc);
+      }
+    }
+  }
+
+  if (allTestCases.length === 0) {
+    allTestCases = [{ input: '', expected: '' }];
+  }
+
+  try {
+    let passedCount = 0;
+    let maxTimeMs = 0;
+    let maxMemoryKb = 1024;
+    let lastStdout = '';
+
+    for (let i = 0; i < allTestCases.length; i++) {
+      const tc = allTestCases[i];
+      const runResult = await executeCodeInSandbox(code, language, tc.input || '');
+
+      maxTimeMs = Math.max(maxTimeMs, runResult.time_ms || 10);
+      maxMemoryKb = Math.max(maxMemoryKb, runResult.memory_kb || 1420);
+      lastStdout = runResult.stdout;
+
+      // Check Compilation Error
+      if (runResult.status.includes('Compilation Error') || (runResult.stderr && runResult.statusId === 6)) {
+        return res.json({
+          status: 'Compilation Error',
+          verdict: 'Compilation Error',
+          runtime_ms: 0,
+          passed_count: 0,
+          total_count: allTestCases.length,
+          stdout: '',
+          stderr: runResult.stderr || 'Compilation failed. Check syntax and includes.',
+          is_solved: false
+        });
+      }
+
+      // Check Runtime Error
+      if (runResult.statusId >= 7 && runResult.statusId <= 12) {
+        return res.json({
+          status: 'Runtime Error',
+          verdict: runResult.status || 'Runtime Error',
+          failed_case: i + 1,
+          total_count: allTestCases.length,
+          runtime_ms: runResult.time_ms,
+          stdout: runResult.stdout,
+          stderr: runResult.stderr || `Runtime Error encountered on testcase #${i + 1}`,
+          is_solved: false
+        });
+      }
+
+      // Check Time Limit Exceeded (> 2.0s)
+      if (runResult.statusId === 5 || runResult.time_ms > 2000) {
+        return res.json({
+          status: 'Time Limit Exceeded',
+          verdict: 'Time Limit Exceeded',
+          failed_case: i + 1,
+          total_count: allTestCases.length,
+          runtime_ms: runResult.time_ms,
+          stderr: `Time Limit Exceeded on testcase #${i + 1} (> 2000ms)`,
+          is_solved: false
+        });
+      }
+
+      // Output matching check
+      const expected = (tc.expected || '').trim();
+      const actual = runResult.stdout.trim();
+
+      if (expected && !actual.includes(expected)) {
+        return res.json({
+          status: 'Wrong Answer',
+          verdict: `Wrong Answer on Testcase #${i + 1}`,
+          failed_case: i + 1,
+          total_count: allTestCases.length,
+          runtime_ms: runResult.time_ms,
+          memory_kb: maxMemoryKb,
+          input: tc.input,
+          expected,
+          actual: actual || '(empty)',
+          stdout: `❌ Testcase #${i + 1} Failed:\nInput: ${tc.input}\nExpected: ${expected}\nActual: ${actual || '(no output)'}`,
+          is_solved: false
+        });
+      }
+
+      passedCount++;
+    }
+
+    // If all passed: ACCEPTED!
+    try {
+      const db = await getDb();
+      await db.run(
+        `INSERT INTO submissions (problem_id, problem_title, platform, language, verdict, runtime_ms, memory_kb)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [problem_id, problem_title, platform, language, 'Accepted', maxTimeMs, maxMemoryKb]
+      );
+    } catch (dbErr) {
+      console.warn('Submission record save warning:', dbErr.message);
+    }
+
+    res.json({
+      status: 'Accepted',
+      verdict: 'Accepted 🎉',
+      runtime_ms: maxTimeMs,
+      memory_kb: maxMemoryKb,
+      passed_count: passedCount,
+      total_count: allTestCases.length,
+      stdout: `🎉 Accepted!\nAll ${passedCount} Test Cases Passed Successfully!\nRuntime: ${maxTimeMs} ms\nMemory: ${(maxMemoryKb / 1024).toFixed(1)} MB`,
+      stderr: '',
+      is_solved: true
+    });
+  } catch (err) {
+    console.error('Submit code error:', err);
+    res.status(500).json({
+      status: 'Execution Failed',
+      verdict: 'Execution Failed',
+      runtime_ms: 0,
+      passed_count: 0,
+      total_count: allTestCases.length,
+      stdout: '',
+      stderr: `Execution Engine Error: ${err.message}`,
+      is_solved: false
     });
   }
 });

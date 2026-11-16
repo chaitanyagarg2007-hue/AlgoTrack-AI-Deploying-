@@ -52,9 +52,24 @@ export async function getDb() {
         last_synced_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS submissions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        problem_id VARCHAR(255) NOT NULL,
+        problem_title VARCHAR(255) NOT NULL,
+        platform VARCHAR(50) DEFAULT 'LeetCode',
+        language VARCHAR(50) NOT NULL,
+        verdict VARCHAR(50) NOT NULL,
+        runtime_ms INTEGER DEFAULT 0,
+        memory_kb INTEGER DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
       CREATE INDEX IF NOT EXISTS idx_users_college ON users (college);
       CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON connected_accounts (user_id);
+      CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions (user_id);
+      CREATE INDEX IF NOT EXISTS idx_submissions_problem ON submissions (problem_id);
     `);
 
     console.log('✅ PostgreSQL Database connected & tables initialized!');
@@ -123,9 +138,24 @@ export async function getDb() {
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS submissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      problem_id TEXT NOT NULL,
+      problem_title TEXT NOT NULL,
+      platform TEXT DEFAULT 'LeetCode',
+      language TEXT NOT NULL,
+      verdict TEXT NOT NULL,
+      runtime_ms INTEGER DEFAULT 0,
+      memory_kb INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
     CREATE INDEX IF NOT EXISTS idx_users_college ON users (college);
     CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON connected_accounts (user_id);
+    CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions (user_id);
+    CREATE INDEX IF NOT EXISTS idx_submissions_problem ON submissions (problem_id);
   `);
 
   console.log('✅ SQLite Database initialized at:', dbPath);

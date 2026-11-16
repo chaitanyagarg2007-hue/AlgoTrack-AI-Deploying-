@@ -86,6 +86,7 @@ const PracticePage = () => {
   
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [isRunningCode, setIsRunningCode] = useState(false);
+  const [isSubmittingCode, setIsSubmittingCode] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
   const [activeHintIndex, setActiveHintIndex] = useState(0);
   const [testResult, setTestResult] = useState(null);
@@ -337,6 +338,80 @@ const PracticePage = () => {
     }
   };
 
+  // Full In-App Submit against Hidden Test Cases with Verdict Engine
+  const handleSubmitCode = async () => {
+    if (!code || !code.trim()) {
+      alert("Please write your code before submitting.");
+      return;
+    }
+    if (!currentProblem) return;
+
+    setConsoleTab('output');
+    setIsSubmittingCode(true);
+    setTestResult({
+      status: "Evaluating Submission...",
+      runtime: "...",
+      memory: "...",
+      testCasesPassed: "Running hidden test cases...",
+      stdout: "Submitting to sandbox engine and evaluating against hidden test cases...",
+      isError: false
+    });
+
+    try {
+      const cases = currentProblem?.testcases || [
+        { input: currentProblem?.sample_input || "", expected: currentProblem?.sample_output || "" }
+      ];
+
+      const resp = await api.post('/submit-code', {
+        code,
+        language,
+        problem_id: currentProblem.id,
+        problem_title: currentProblem.title,
+        platform: currentProblem.platform || 'LeetCode',
+        testcases: cases
+      });
+
+      const res = resp.data;
+      const isAccepted = res.status === "Accepted";
+
+      const memoryText = res.memory_kb ? `${(res.memory_kb / 1024).toFixed(1)} MB` : "1.4 MB";
+      const runtimeMs = res.runtime_ms ?? 0;
+      const passedCount = res.passed_count ?? 0;
+      const totalCount = res.total_count ?? cases.length;
+
+      let displayText = res.stdout || '';
+      if (res.stderr) {
+        displayText = displayText ? `${displayText}\n\n[Errors]:\n${res.stderr}` : `[Compiler / Runtime Error]:\n${res.stderr}`;
+      }
+
+      setTestResult({
+        status: res.verdict || res.status,
+        runtime: `${runtimeMs} ms`,
+        memory: memoryText,
+        testCasesPassed: `${passedCount} / ${totalCount} Passed`,
+        stdout: displayText,
+        isError: !isAccepted
+      });
+
+      // If accepted, automatically mark as solved!
+      if (isAccepted) {
+        handleMarkAsAlreadyDone();
+      }
+    } catch (err) {
+      console.error("Submission failed:", err);
+      setTestResult({
+        status: "Submission Failed",
+        runtime: "0 ms",
+        memory: "0 MB",
+        testCasesPassed: "0 / 0 Passed",
+        stdout: `Submission Error: ${err.response?.data?.detail || err.message}`,
+        isError: true
+      });
+    } finally {
+      setIsSubmittingCode(false);
+    }
+  };
+
   const testcases = currentProblem?.testcases || [
     { input: currentProblem?.sample_input || "Sample", expected: currentProblem?.sample_output || "Expected" }
   ];
@@ -461,9 +536,31 @@ const PracticePage = () => {
           <button 
             className="btn-console-run" 
             onClick={handleRunCode}
-            disabled={isRunningCode}
+            disabled={isRunningCode || isSubmittingCode}
           >
-            {isRunningCode ? "⏳ Running..." : "▶ Run Test Cases"}
+            {isRunningCode ? "⏳ Running..." : "▶ Run"}
+          </button>
+
+          <button 
+            onClick={handleSubmitCode}
+            disabled={isSubmittingCode || isRunningCode}
+            style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: '#ffffff',
+              border: 'none',
+              padding: '6px 14px',
+              borderRadius: '6px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: (isSubmittingCode || isRunningCode) ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+              transition: 'all 0.2s'
+            }}
+          >
+            {isSubmittingCode ? "⏳ Evaluating..." : "🚀 Submit"}
           </button>
 
           <button 
@@ -1072,8 +1169,28 @@ const PracticePage = () => {
                 </div>
 
                 <div className="console-actions">
-                  <button className="btn-console-run" onClick={handleRunCode} disabled={isRunningCode}>
+                  <button className="btn-console-run" onClick={handleRunCode} disabled={isRunningCode || isSubmittingCode}>
                     {isRunningCode ? "⏳ Running..." : "▶ Run"}
+                  </button>
+                  <button 
+                    onClick={handleSubmitCode}
+                    disabled={isSubmittingCode || isRunningCode}
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '5px 12px',
+                      borderRadius: '4px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: (isSubmittingCode || isRunningCode) ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
+                    }}
+                  >
+                    {isSubmittingCode ? "⏳ Evaluating..." : "🚀 Submit"}
                   </button>
                   <button className="btn-console-ai" onClick={handleDiagnose} disabled={isDiagnosing}>
                     {isDiagnosing ? "Analyzing..." : "⚡ AI Diagnostics"}
