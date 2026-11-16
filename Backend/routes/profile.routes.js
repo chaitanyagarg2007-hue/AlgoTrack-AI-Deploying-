@@ -66,6 +66,13 @@ router.get('/unified-profile', async (req, res) => {
       }
     }
 
+    // Combined rating history across all connected platforms (LeetCode + Codeforces + CodeChef)
+    const allRatingHistory = [
+      ...(cfData?.rating_history || []),
+      ...(lcData?.rating_history || []),
+      ...(ccData?.rating_history || [])
+    ].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
     const response = {
       user_handles: {
         leetcode: leetcode || null,
@@ -81,7 +88,10 @@ router.get('/unified-profile', async (req, res) => {
         ac_rate: 75.0
       })),
       weak_spots: weakSpots,
-      rating_history: cfData?.rating_history || [],
+      rating_history: allRatingHistory,
+      cf_rating_history: cfData?.rating_history || [],
+      lc_rating_history: lcData?.rating_history || [],
+      cc_rating_history: ccData?.rating_history || [],
       heatmap: cfData?.heatmap || [],
       language_stats: cfData?.language_stats || []
     };

@@ -15,9 +15,16 @@ export async function fetchCodeforcesData(handle) {
     }
 
     const userInfo = infoRes.value.data.result[0];
-    const ratingHistory = ratingRes.status === 'fulfilled' && ratingRes.value.data?.status === 'OK'
+    const rawRatingHistory = ratingRes.status === 'fulfilled' && ratingRes.value.data?.status === 'OK'
       ? ratingRes.value.data.result
       : [];
+    const ratingHistory = rawRatingHistory.map(h => ({
+      ...h,
+      platform: 'Codeforces',
+      rating: h.newRating,
+      timestamp: h.ratingUpdateTimeSeconds,
+      date: new Date(h.ratingUpdateTimeSeconds * 1000).toISOString()
+    }));
     const submissions = statusRes.status === 'fulfilled' && statusRes.value.data?.status === 'OK'
       ? statusRes.value.data.result
       : [];

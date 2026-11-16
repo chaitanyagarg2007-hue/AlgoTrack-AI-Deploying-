@@ -21,6 +21,27 @@ export async function fetchCodeChefData(username) {
     const solvedMatch = html.match(/Total Problems Solved:\s*<span>(\d+)<\/span>/) || html.match(/<h3>Total Problems Solved:\s*(\d+)<\/h3>/);
     const totalSolved = solvedMatch ? parseInt(solvedMatch[1], 10) : (rating > 0 ? 45 : 0);
 
+    // Extract contest rating history
+    let contestHistory = [];
+    const allRatingMatch = html.match(/var all_rating = (\[.*?\]);/s);
+    if (allRatingMatch) {
+      try {
+        const rawHistory = JSON.parse(allRatingMatch[1]);
+        contestHistory = rawHistory.map(h => {
+          const dateStr = h.end_date || `${h.getyear}-${h.getmonth}-${h.getday}`;
+          const ts = Math.floor(new Date(dateStr).getTime() / 1000);
+          return {
+            platform: 'CodeChef',
+            contestName: h.name || h.code,
+            rating: parseInt(h.rating, 10),
+            date: new Date(ts * 1000).toISOString(),
+            timestamp: ts,
+            ranking: parseInt(h.rank, 10)
+          };
+        });
+      } catch (e) {}
+    }
+
     return {
       platform: 'CodeChef',
       username,
@@ -31,7 +52,8 @@ export async function fetchCodeChefData(username) {
         'Math & Number Theory': 15,
         'Greedy Algorithms': 12,
         'Arrays & Hashing': 18
-      }
+      },
+      rating_history: contestHistory
     };
   } catch (err) {
     console.warn(`CodeChef fetch failed for @${username}:`, err.message);

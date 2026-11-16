@@ -35,6 +35,7 @@ const UnifiedDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [ratingPlatform, setRatingPlatform] = useState('All');
 
   // Sync back to localStorage so session is preserved
   useEffect(() => {
@@ -132,12 +133,23 @@ const UnifiedDashboard = () => {
     value: info.total_solved || 0
   }));
 
-  // Rating Progression Line Chart
-  const ratingData = data.rating_history?.map((h) => ({
-    name: h.contestName,
-    date: new Date(h.ratingUpdateTimeSeconds * 1000).toLocaleDateString(),
-    rating: h.newRating
-  })) || [];
+  // Multi-Platform Rating Progression Data (LeetCode, Codeforces, CodeChef)
+  const getFilteredRatingData = () => {
+    let source = [];
+    if (ratingPlatform === 'LeetCode') source = data.lc_rating_history || [];
+    else if (ratingPlatform === 'Codeforces') source = data.cf_rating_history || [];
+    else if (ratingPlatform === 'CodeChef') source = data.cc_rating_history || [];
+    else source = data.rating_history || [];
+
+    return source.map((h) => ({
+      name: h.contestName || h.name || 'Contest',
+      date: h.date ? new Date(h.date).toLocaleDateString() : (h.timestamp ? new Date(h.timestamp * 1000).toLocaleDateString() : (h.ratingUpdateTimeSeconds ? new Date(h.ratingUpdateTimeSeconds * 1000).toLocaleDateString() : 'N/A')),
+      rating: h.rating || h.newRating || 0,
+      platform: h.platform || 'Codeforces'
+    }));
+  };
+
+  const ratingData = getFilteredRatingData();
 
   // Language Distribution Pie Chart
   const topLanguages = data.language_stats?.slice(0, 6) || [];
@@ -351,27 +363,67 @@ const UnifiedDashboard = () => {
           </div>
         )}
 
-        {/* 2. Rating Progression & Platform Share Charts */}
+        {/* 2. Multi-Platform Rating Progression & Platform Share Charts */}
         <div className="charts-grid mt-6">
           <div className="card">
-            <h2 className="mb-4">Rating Progression</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>🏆 Rating Progression</h2>
+              
+              {/* Platform Selector Buttons */}
+              <div style={{ display: 'inline-flex', background: '#090d16', padding: '3px', borderRadius: '8px', border: '1px solid #1e293b' }}>
+                {[
+                  { id: 'All', label: 'All', color: '#f8fafc' },
+                  { id: 'LeetCode', label: '🟧 LC', color: '#fbbf24', count: data.lc_rating_history?.length || 0 },
+                  { id: 'Codeforces', label: '🟦 CF', color: '#60a5fa', count: data.cf_rating_history?.length || 0 },
+                  { id: 'CodeChef', label: '🟫 CC', color: '#c084fc', count: data.cc_rating_history?.length || 0 }
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setRatingPlatform(opt.id)}
+                    style={{
+                      background: ratingPlatform === opt.id ? '#1e293b' : 'transparent',
+                      color: ratingPlatform === opt.id ? opt.color : '#64748b',
+                      border: 'none',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {opt.label} {opt.count > 0 ? `(${opt.count})` : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div style={{ width: '100%', height: 280 }}>
               {ratingData.length > 0 ? (
                 <ResponsiveContainer>
                   <LineChart data={ratingData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2a3441" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                     <XAxis dataKey="date" stroke="#94a3b8" />
                     <YAxis stroke="#94a3b8" domain={['auto', 'auto']} />
                     <RechartsTooltip 
-                      contentStyle={{ backgroundColor: '#0f1a2e', borderColor: '#2a3441' }}
-                      labelStyle={{ color: '#f0f4ff' }}
+                      contentStyle={{ backgroundColor: '#0b1329', borderColor: '#1e293b', borderRadius: '8px' }}
+                      labelStyle={{ color: '#f8fafc', fontWeight: 600 }}
+                      formatter={(val, name, item) => [`${val} Rating`, `${item.payload.platform}: ${item.payload.name}`]}
                     />
-                    <Line type="monotone" dataKey="rating" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="rating" 
+                      stroke={ratingPlatform === 'LeetCode' ? '#f59e0b' : (ratingPlatform === 'CodeChef' ? '#c084fc' : '#38bdf8')} 
+                      strokeWidth={2.5} 
+                      dot={{ r: 3, fill: '#fff' }} 
+                      activeDot={{ r: 6 }}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex-center h-full text-muted">
-                  No contest rating history recorded yet.
+                <div className="flex-center h-full text-muted" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <span>No contest rating history found for {ratingPlatform === 'All' ? 'connected platforms' : ratingPlatform}.</span>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Participate in live rated contests to see your rating progression!</span>
                 </div>
               )}
             </div>

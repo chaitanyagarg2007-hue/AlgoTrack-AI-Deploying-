@@ -32,6 +32,21 @@ export async function fetchLeetCodeData(username) {
           }
         }
       }
+      userContestRanking(username: $username) {
+        attendedContestsCount
+        rating
+        globalRanking
+        topPercentage
+      }
+      userContestRankingHistory(username: $username) {
+        attended
+        rating
+        ranking
+        contest {
+          title
+          startTime
+        }
+      }
     }
   `;
 
@@ -72,14 +87,30 @@ export async function fetchLeetCodeData(username) {
       }
     }
 
+    const contestRanking = res.data?.data?.userContestRanking;
+    const rawContestHistory = res.data?.data?.userContestRankingHistory || [];
+    const contestHistory = rawContestHistory
+      .filter(h => h.attended)
+      .map(h => ({
+        platform: 'LeetCode',
+        contestName: h.contest?.title || 'LeetCode Contest',
+        rating: Math.round(h.rating),
+        date: new Date((h.contest?.startTime || 0) * 1000).toISOString(),
+        timestamp: h.contest?.startTime || 0,
+        ranking: h.ranking
+      }));
+
     return {
       platform: 'LeetCode',
       username,
       avatar: user.profile?.userAvatar,
       ranking: user.profile?.ranking || 0,
+      contest_rating: contestRanking?.rating ? Math.round(contestRanking.rating) : 0,
+      global_ranking: contestRanking?.globalRanking || 0,
       total_solved: totalSolved,
       difficulty: diffBreakdown,
-      topic_counts: topicCounts
+      topic_counts: topicCounts,
+      rating_history: contestHistory
     };
   } catch (err) {
     console.warn(`LeetCode fetch failed for @${username}:`, err.message);
