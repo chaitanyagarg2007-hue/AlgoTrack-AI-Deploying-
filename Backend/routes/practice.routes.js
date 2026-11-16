@@ -31,52 +31,63 @@ router.get('/potd', async (req, res) => {
 });
 
 // =============================================================================
-// 2. PRACTICE PROBLEMS LIST (Curated + Live Codeforces & CodeChef Stream)
+// 2. PRACTICE PROBLEMS LIST (Curated + Live LeetCode, Codeforces & CodeChef Stream)
 // =============================================================================
 router.get('/practice-problems', async (req, res) => {
   const { topic = 'All', difficulty = 'All', platform = 'All', cf_handle = '', mode = 'all' } = req.query;
 
   try {
-    // If specific non-LC platform or stream mode requested, fetch directly from universal stream
-    if (platform.toLowerCase() === 'codeforces' || platform.toLowerCase() === 'codechef' || mode === 'stream') {
+    // If stream mode, or non-default platform requested, or user clicked "New Batch":
+    if (mode === 'stream' || platform.toLowerCase() === 'codeforces' || platform.toLowerCase() === 'codechef') {
       const dynamicProblems = await getUniversalProblemset({
         platform,
         topic,
         difficulty,
         cfHandle: cf_handle,
-        limit: 12
+        limit: 15
       });
       return res.json(dynamicProblems);
     }
 
-    // Otherwise, filter curated bank
-    let curatedFiltered = [...problemsData];
+    if (platform.toLowerCase() === 'leetcode') {
+      // Fetch live LeetCode problems directly from LeetCode GraphQL (4,100+ database)
+      const lcLive = await getUniversalProblemset({
+        platform: 'LeetCode',
+        topic,
+        difficulty,
+        limit: 12
+      });
 
+      // Filter curated as well
+      let curatedLC = problemsData.filter(p => (p.platform || 'LeetCode').toLowerCase() === 'leetcode');
+      if (topic && topic.toLowerCase() !== 'all') {
+        curatedLC = curatedLC.filter(p => p.topic?.toLowerCase() === topic.toLowerCase());
+      }
+      if (difficulty && difficulty.toLowerCase() !== 'all') {
+        curatedLC = curatedLC.filter(p => p.difficulty?.toLowerCase() === difficulty.toLowerCase());
+      }
+
+      return res.json([...curatedLC, ...lcLive]);
+    }
+
+    // Default "All": Combine curated + live 3-platform stream (LC + CF + CC)
+    const streamProblems = await getUniversalProblemset({
+      platform: 'All',
+      topic,
+      difficulty,
+      cfHandle: cf_handle,
+      limit: 12
+    });
+
+    let curatedFiltered = [...problemsData];
     if (topic && topic.toLowerCase() !== 'all') {
       curatedFiltered = curatedFiltered.filter(p => p.topic?.toLowerCase() === topic.toLowerCase());
     }
-
     if (difficulty && difficulty.toLowerCase() !== 'all') {
       curatedFiltered = curatedFiltered.filter(p => p.difficulty?.toLowerCase() === difficulty.toLowerCase());
     }
 
-    if (platform && platform.toLowerCase() !== 'all') {
-      curatedFiltered = curatedFiltered.filter(p => (p.platform || 'LeetCode').toLowerCase() === platform.toLowerCase());
-    }
-
-    // If "All", combine curated with fresh Codeforces & CodeChef live stream
-    if (platform.toLowerCase() === 'all') {
-      const streamExtras = await getUniversalProblemset({
-        platform: 'All',
-        topic,
-        difficulty,
-        cfHandle: cf_handle,
-        limit: 8
-      });
-      return res.json([...curatedFiltered, ...streamExtras]);
-    }
-
-    res.json(curatedFiltered);
+    return res.json([...curatedFiltered, ...streamProblems]);
   } catch (err) {
     console.error('Error fetching practice problems:', err);
     res.json(problemsData);
