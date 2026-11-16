@@ -3,9 +3,11 @@ import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api/client';
 import { CodeEditorWithSyntax } from '../../components/CodeEditorWithSyntax';
 import { useAuthStore } from '../../store/authStore';
+import { useTheme } from '../../context/ThemeContext';
 import './PracticePage.css';
 
 const PracticePage = () => {
+  const { theme, toggleTheme } = useTheme();
   const { problemId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -523,6 +525,26 @@ const PracticePage = () => {
           >
             🏆 Contests
           </Link>
+
+          <button
+            onClick={toggleTheme}
+            style={{
+              background: '#1f1f23',
+              color: '#cbd5e1',
+              border: 'none',
+              padding: '5px 10px',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+          >
+            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+          </button>
 
           <select 
             className="lang-select"

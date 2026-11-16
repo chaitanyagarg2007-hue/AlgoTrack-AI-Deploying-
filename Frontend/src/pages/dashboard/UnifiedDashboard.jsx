@@ -9,10 +9,12 @@ import {
 import { UpcomingContests } from '../../components/UpcomingContests';
 import { useAuthStore } from '../../store/authStore';
 import { updateUserHandles } from '../../lib/api/auth';
+import { useTheme } from '../../context/ThemeContext';
 import './Dashboard.css';
 import './UnifiedDashboard.css';
 
 const UnifiedDashboard = () => {
+  const { theme, toggleTheme } = useTheme();
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated, openAuthModal, logout } = useAuthStore();
   const [savedToCloud, setSavedToCloud] = useState(false);
@@ -229,6 +231,22 @@ const UnifiedDashboard = () => {
             >
               ⚡ Arena
             </Link>
+
+            <button
+              onClick={toggleTheme}
+              className="btn-share"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '0.8rem'
+              }}
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            >
+              {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+            </button>
 
             {isAuthenticated && user && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '6px' }}>

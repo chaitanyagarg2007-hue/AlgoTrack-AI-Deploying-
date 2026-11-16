@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useTheme } from '../context/ThemeContext';
 import './Navbar.css';
 
 export const Navbar = () => {
   const { user, isAuthenticated, openAuthModal, logout, fetchMe } = useAuthStore();
+  const { theme, toggleTheme } = useTheme();
 
   // Load session from backend if token exists
   useEffect(() => {
@@ -35,7 +37,29 @@ export const Navbar = () => {
         </Link>
       </div>
 
-      <div className="nav-auth-section">
+      <div className="nav-auth-section" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Dark / Light Mode Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          style={{
+            background: 'var(--color-bg-tertiary)',
+            border: '1px solid var(--color-border-strong)',
+            color: 'var(--color-text-primary)',
+            padding: '5px 12px',
+            borderRadius: '20px',
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontWeight: 600,
+            transition: 'all 0.2s'
+          }}
+          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+        >
+          {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+        </button>
+
         {isAuthenticated && user ? (
           <div className="nav-user-profile">
             {/* College Badge */}
