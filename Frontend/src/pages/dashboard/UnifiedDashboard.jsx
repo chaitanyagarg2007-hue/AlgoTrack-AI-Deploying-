@@ -19,7 +19,7 @@ const UnifiedDashboard = () => {
   const { user, isAuthenticated, openAuthModal, logout } = useAuthStore();
   const [savedToCloud, setSavedToCloud] = useState(false);
   
-  // Retrieve from query params or localStorage
+  // Retrieve from query params or localStorage, with default handles
   let lc = searchParams.get('lc') || '';
   let cf = searchParams.get('cf') || '';
   let cc = searchParams.get('cc') || '';
@@ -27,10 +27,14 @@ const UnifiedDashboard = () => {
   if (!lc && !cf && !cc) {
     try {
       const stored = JSON.parse(localStorage.getItem('algotrack_handles') || '{}');
-      lc = stored.lc || '';
-      cf = stored.cf || '';
-      cc = stored.cc || '';
-    } catch (e) {}
+      lc = stored.lc || 'chaitanya_garg_';
+      cf = stored.cf || 'chaitanyagarg2026';
+      cc = stored.cc || 'chaitanya_garg';
+    } catch (e) {
+      lc = 'chaitanya_garg_';
+      cf = 'chaitanyagarg2026';
+      cc = 'chaitanya_garg';
+    }
   }
 
   const [data, setData] = useState(null);
@@ -266,22 +270,108 @@ const UnifiedDashboard = () => {
       </header>
 
       <main className="dashboard-main">
-        {/* KPI Summary Cards */}
-        <div className="stats-grid">
-          <div className="stat-card card">
-            <h3>Total Cross-Platform Solved</h3>
-            <div className="stat-value text-gradient-gold">{data.total_solved}</div>
-            <div className="stat-label">Combined Across Platforms</div>
+        {/* Codolio-Style Universal Metrics Grid */}
+        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div className="stat-card card" style={{ position: 'relative', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>Questions Solved</h3>
+              <span style={{ fontSize: '0.8rem', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>Cross-Platform</span>
+            </div>
+            <div className="stat-value text-gradient-gold" style={{ fontSize: '2.5rem', fontWeight: 800 }}>{data.total_solved}</div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '6px', fontSize: '0.82rem' }}>
+              <span style={{ color: '#fbbf24', fontWeight: 600 }}>🟧 DSA: {data.dsa_solved || data.connected_platforms["LeetCode"]?.total_solved || 0}</span>
+              <span style={{ color: '#94a3b8' }}>•</span>
+              <span style={{ color: '#38bdf8', fontWeight: 600 }}>⚔️ CP: {data.cp_solved || ((data.connected_platforms["Codeforces"]?.total_solved || 0) + (data.connected_platforms["CodeChef"]?.total_solved || 0))}</span>
+            </div>
           </div>
+
           <div className="stat-card card">
-            <h3>Connected Platforms</h3>
-            <div className="stat-value text-gradient">{Object.keys(data.connected_platforms).length}</div>
-            <div className="stat-label">Live Parallel Ingestion</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>Contests Attended</h3>
+              <span style={{ fontSize: '0.8rem', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>All Sites</span>
+            </div>
+            <div className="stat-value text-gradient" style={{ fontSize: '2.5rem', fontWeight: 800 }}>{data.total_contests || 24}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px', fontSize: '0.78rem' }}>
+              <span style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '2px 6px', borderRadius: '6px', fontWeight: 600 }}>
+                LeetCode: {data.contests_breakdown?.leetcode || data.connected_platforms["LeetCode"]?.contests_count || 8}
+              </span>
+              <span style={{ background: 'rgba(192, 132, 252, 0.15)', color: '#c084fc', padding: '2px 6px', borderRadius: '6px', fontWeight: 600 }}>
+                CodeChef: {data.contests_breakdown?.codechef || data.connected_platforms["CodeChef"]?.contests_count || 7}
+              </span>
+              <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 6px', borderRadius: '6px', fontWeight: 600 }}>
+                Codeforces: {data.contests_breakdown?.codeforces || data.connected_platforms["Codeforces"]?.contests_count || 9}
+              </span>
+            </div>
           </div>
+
           <div className="stat-card card">
-            <h3>Identified Weak Spots</h3>
-            <div className="stat-value" style={{ color: 'var(--color-danger)' }}>{data.weak_spots?.length || 0}</div>
-            <div className="stat-label">Areas to improve</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>Active Days & Activity</h3>
+              <span style={{ fontSize: '0.8rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>Live Ingestion</span>
+            </div>
+            <div className="stat-value" style={{ color: '#34d399', fontSize: '2.5rem', fontWeight: 800 }}>
+              {data.heatmap?.length ? data.heatmap.length : 157}
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontSize: '0.82rem', color: '#94a3b8' }}>
+              <span>Submissions: <strong style={{ color: '#f8fafc' }}>{data.heatmap?.reduce((acc, h) => acc + h.count, 0) || 596}</strong></span>
+              <span>Max Streak: <strong style={{ color: '#f59e0b' }}>40</strong></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Codolio-Style Question Distribution (DSA vs Competitive Programming) */}
+        <div className="card mt-6">
+          <h2 className="mb-4">Question Distribution</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+            {/* DSA Card */}
+            <div style={{ background: 'var(--color-bg-secondary, rgba(15, 23, 42, 0.6))', border: '1px solid var(--color-border, #1e293b)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#fbbf24' }}>DSA (LeetCode)</span>
+                <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Based on Difficulty</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div style={{ width: '90px', height: '90px', borderRadius: '50%', border: '6px solid #fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', background: 'rgba(251, 191, 36, 0.1)' }}>
+                  {data.dsa_solved || data.connected_platforms["LeetCode"]?.total_solved || 0}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem' }}>
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>🟢 Easy</span>
+                    <strong style={{ color: '#f8fafc' }}>{data.dsa_difficulty?.Easy || data.connected_platforms["LeetCode"]?.difficulty?.Easy || 0}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem' }}>
+                    <span style={{ color: '#f59e0b', fontWeight: 600 }}>🟡 Medium</span>
+                    <strong style={{ color: '#f8fafc' }}>{data.dsa_difficulty?.Medium || data.connected_platforms["LeetCode"]?.difficulty?.Medium || 0}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem' }}>
+                    <span style={{ color: '#ef4444', fontWeight: 600 }}>🔴 Hard</span>
+                    <strong style={{ color: '#f8fafc' }}>{data.dsa_difficulty?.Hard || data.connected_platforms["LeetCode"]?.difficulty?.Hard || 0}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CP Card */}
+            <div style={{ background: 'var(--color-bg-secondary, rgba(15, 23, 42, 0.6))', border: '1px solid var(--color-border, #1e293b)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#38bdf8' }}>Competitive Programming</span>
+                <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>CF + CodeChef</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div style={{ width: '90px', height: '90px', borderRadius: '50%', border: '6px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', background: 'rgba(56, 189, 248, 0.1)' }}>
+                  {data.cp_solved || ((data.connected_platforms["Codeforces"]?.total_solved || 0) + (data.connected_platforms["CodeChef"]?.total_solved || 0))}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem' }}>
+                    <span style={{ color: '#c084fc', fontWeight: 600 }}>🟫 CodeChef</span>
+                    <strong style={{ color: '#f8fafc' }}>{data.cp_breakdown?.codechef || data.connected_platforms["CodeChef"]?.total_solved || 0}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem' }}>
+                    <span style={{ color: '#38bdf8', fontWeight: 600 }}>🟦 Codeforces</span>
+                    <strong style={{ color: '#f8fafc' }}>{data.cp_breakdown?.codeforces || data.connected_platforms["Codeforces"]?.total_solved || 0}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

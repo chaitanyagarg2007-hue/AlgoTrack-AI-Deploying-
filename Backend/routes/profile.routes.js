@@ -56,6 +56,12 @@ router.get('/unified-profile', async (req, res) => {
       }
     }
 
+    // Dynamic DSA vs CP metrics (Codolio-style separation)
+    const dsaSolved = lcData?.total_solved || 0;
+    const cpSolved = (cfData?.total_solved || 0) + (ccData?.total_solved || 0);
+
+    const totalContests = (lcData?.contests_count || 0) + (cfData?.contests_count || 0) + (ccData?.contests_count || 0);
+
     // Weak spot detection: topics with low solved counts relative to overall practice
     const weakSpots = [];
     const coreTopics = ['Dynamic Programming', 'Graphs', 'Trees & Binary Trees', 'Binary Search', 'Sorting', 'Math & Number Theory', 'Greedy Algorithms'];
@@ -73,6 +79,14 @@ router.get('/unified-profile', async (req, res) => {
       ...(ccData?.rating_history || [])
     ].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
+    // Master list of solved problem identifiers across all platforms for Practice Page filtering
+    const solvedIdentifiers = [
+      ...(lcData?.solved_titles || []),
+      ...(lcData?.solved_slugs || []),
+      ...(cfData?.solved_problem_ids || []),
+      ...(cfData?.solved_problem_names || [])
+    ];
+
     const response = {
       user_handles: {
         leetcode: leetcode || null,
@@ -80,7 +94,21 @@ router.get('/unified-profile', async (req, res) => {
         codechef: codechef || null
       },
       total_solved: totalSolved,
+      dsa_solved: dsaSolved,
+      cp_solved: cpSolved,
+      total_contests: totalContests,
+      contests_breakdown: {
+        leetcode: lcData?.contests_count || 0,
+        codeforces: cfData?.contests_count || 0,
+        codechef: ccData?.contests_count || 0
+      },
+      dsa_difficulty: lcData?.difficulty || { Easy: 0, Medium: 0, Hard: 0 },
+      cp_breakdown: {
+        codeforces: cfData?.total_solved || 0,
+        codechef: ccData?.total_solved || 0
+      },
       connected_platforms: connectedPlatforms,
+      solved_identifiers: solvedIdentifiers,
       topic_breakdown: Object.entries(combinedTopics).map(([topic, solved]) => ({
         topic,
         solved,
@@ -120,6 +148,7 @@ router.get('/analyze/:handle', async (req, res) => {
       max_rating: cfData.max_rating,
       avatar: cfData.avatar,
       total_solved: cfData.total_solved,
+      contests_count: cfData.contests_count,
       weak_topics: ['Dynamic Programming', 'Bit Manipulation'],
       topic_breakdown: Object.entries(cfData.topic_counts || {}).map(([topic, solved]) => ({
         topic,

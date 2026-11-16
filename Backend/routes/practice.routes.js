@@ -14,7 +14,17 @@ const router = express.Router();
 let problemsData = [];
 try {
   const jsonPath = path.join(__dirname, '../services/problems_bank.json');
-  problemsData = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+  const raw = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+  problemsData = raw.map(p => {
+    const cleaned = { ...p };
+    if (cleaned.starter_code?.cpp) {
+      cleaned.starter_code.cpp = cleaned.starter_code.cpp.replace(/\n\nint main\(\)[\s\S]*$/, '');
+    }
+    if (cleaned.starter_code?.python) {
+      cleaned.starter_code.python = cleaned.starter_code.python.replace(/\n\n# Test[\s\S]*$/, '').replace(/\n\nsol = Solution\(\)[\s\S]*$/, '');
+    }
+    return cleaned;
+  });
 } catch (err) {
   console.warn('Could not load problems_bank.json:', err.message);
 }
@@ -38,6 +48,22 @@ router.get('/practice-problems', async (req, res) => {
   const { topic = 'All', difficulty = 'All', platform = 'All', cf_handle = '', mode = 'all' } = req.query;
 
   try {
+    // 1. Fetch user accepted submissions from local DB
+    const solvedSet = new Set();
+    try {
+      const db = await getDb();
+      const rows = await db.all("SELECT problem_id, problem_title FROM submissions WHERE verdict = 'Accepted'");
+      for (const r of (rows || [])) {
+        if (r.problem_id) solvedSet.add(r.problem_id.toLowerCase());
+        if (r.problem_title) solvedSet.add(r.problem_title.toLowerCase());
+      }
+    } catch (e) {}
+
+    const markSolved = (list) => (list || []).map(p => ({
+      ...p,
+      is_solved: Boolean(p.is_solved || solvedSet.has(p.id?.toLowerCase()) || solvedSet.has(p.title?.toLowerCase()))
+    }));
+
     // If stream mode, or non-default platform requested, or user clicked "New Batch":
     if (mode === 'stream' || platform.toLowerCase() === 'codeforces' || platform.toLowerCase() === 'codechef') {
       const dynamicProblems = await getUniversalProblemset({
@@ -47,7 +73,7 @@ router.get('/practice-problems', async (req, res) => {
         cfHandle: cf_handle,
         limit: 15
       });
-      return res.json(dynamicProblems);
+      return res.json(markSolved(dynamicProblems));
     }
 
     if (platform.toLowerCase() === 'leetcode') {
@@ -68,7 +94,7 @@ router.get('/practice-problems', async (req, res) => {
         curatedLC = curatedLC.filter(p => p.difficulty?.toLowerCase() === difficulty.toLowerCase());
       }
 
-      return res.json([...curatedLC, ...lcLive]);
+      return res.json(markSolved([...curatedLC, ...lcLive]));
     }
 
     // Default "All": Combine curated + live 3-platform stream (LC + CF + CC)
@@ -88,7 +114,7 @@ router.get('/practice-problems', async (req, res) => {
       curatedFiltered = curatedFiltered.filter(p => p.difficulty?.toLowerCase() === difficulty.toLowerCase());
     }
 
-    return res.json([...curatedFiltered, ...streamProblems]);
+    return res.json(markSolved([...curatedFiltered, ...streamProblems]));
   } catch (err) {
     console.error('Error fetching practice problems:', err);
     res.json(problemsData);
@@ -133,7 +159,7 @@ router.post('/diagnose', (req, res) => {
 // 3. REAL SANDBOX CODE EXECUTION (Judge0 Compiler Engine)
 // =============================================================================
 router.post('/run-code', async (req, res) => {
-  const { code, language = 'cpp', testcases = [] } = req.body;
+  const { code, language = 'cpp', testcases = [], problem_id = '' } = req.body;
 
   if (!code || !code.trim()) {
     return res.status(400).json({ detail: 'Code cannot be empty.' });
@@ -142,7 +168,7 @@ router.post('/run-code', async (req, res) => {
   try {
     // Run the user code against the sandbox
     const inputSample = testcases[0]?.input || '';
-    const runResult = await executeCodeInSandbox(code, language, inputSample);
+    const runResult = await executeCodeInSandbox(code, language, inputSample, problem_id);
 
     // If compilation error
     if (runResult.status.includes('Compilation Error') || (runResult.stderr && runResult.statusId === 6)) {
@@ -232,7 +258,7 @@ router.post('/submit-code', async (req, res) => {
 
     for (let i = 0; i < allTestCases.length; i++) {
       const tc = allTestCases[i];
-      const runResult = await executeCodeInSandbox(code, language, tc.input || '');
+      const runResult = await executeCodeInSandbox(code, language, tc.input || '', problem_id);
 
       maxTimeMs = Math.max(maxTimeMs, runResult.time_ms || 10);
       maxMemoryKb = Math.max(maxMemoryKb, runResult.memory_kb || 1420);

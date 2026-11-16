@@ -1,5 +1,10 @@
 import axios from 'axios';
 
+/**
+ * Universal LeetCode User Data Ingestion
+ * Fetches real live profile stats, difficulty breakdown, contest history, and AC submissions.
+ * Zero hardcoding.
+ */
 export async function fetchLeetCodeData(username) {
   if (!username) return null;
 
@@ -10,11 +15,13 @@ export async function fetchLeetCodeData(username) {
         profile {
           userAvatar
           ranking
+          reputation
         }
         submitStatsGlobal {
           acSubmissionNum {
             difficulty
             count
+            submissions
           }
         }
         tagProblemCounts {
@@ -47,6 +54,12 @@ export async function fetchLeetCodeData(username) {
           startTime
         }
       }
+      recentAcSubmissionList(username: $username, limit: 100) {
+        id
+        title
+        titleSlug
+        timestamp
+      }
     }
   `;
 
@@ -60,22 +73,31 @@ export async function fetchLeetCodeData(username) {
           'Referer': 'https://leetcode.com',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         },
-        timeout: 10000
+        timeout: 12000
       }
     );
 
     const user = res.data?.data?.matchedUser;
     if (!user) return null;
 
-    const diffBreakdown = {};
+    const diffBreakdown = {
+      Easy: 0,
+      Medium: 0,
+      Hard: 0
+    };
     let totalSolved = 0;
     const acSubs = user.submitStatsGlobal?.acSubmissionNum || [];
     for (const item of acSubs) {
       if (item.difficulty === 'All') {
         totalSolved = item.count;
-      } else {
+      } else if (diffBreakdown[item.difficulty] !== undefined) {
         diffBreakdown[item.difficulty] = item.count;
       }
+    }
+
+    // In case 'All' wasn't set, sum the components
+    if (!totalSolved) {
+      totalSolved = (diffBreakdown.Easy || 0) + (diffBreakdown.Medium || 0) + (diffBreakdown.Hard || 0);
     }
 
     const topicCounts = {};
@@ -100,6 +122,10 @@ export async function fetchLeetCodeData(username) {
         ranking: h.ranking
       }));
 
+    const recentAcs = res.data?.data?.recentAcSubmissionList || [];
+    const solvedTitles = recentAcs.map(s => s.title?.toLowerCase().trim());
+    const solvedSlugs = recentAcs.map(s => s.titleSlug?.toLowerCase().trim());
+
     return {
       platform: 'LeetCode',
       username,
@@ -107,10 +133,13 @@ export async function fetchLeetCodeData(username) {
       ranking: user.profile?.ranking || 0,
       contest_rating: contestRanking?.rating ? Math.round(contestRanking.rating) : 0,
       global_ranking: contestRanking?.globalRanking || 0,
+      contests_count: contestRanking?.attendedContestsCount || contestHistory.length,
       total_solved: totalSolved,
       difficulty: diffBreakdown,
       topic_counts: topicCounts,
-      rating_history: contestHistory
+      rating_history: contestHistory,
+      solved_titles: solvedTitles,
+      solved_slugs: solvedSlugs
     };
   } catch (err) {
     console.warn(`LeetCode fetch failed for @${username}:`, err.message);

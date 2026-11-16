@@ -1,5 +1,10 @@
 import axios from 'axios';
 
+/**
+ * Universal Codeforces User Data Fetcher
+ * Aggregates live user info, rating history, unique solved problems, submissions heatmap, and language breakdown.
+ * Zero hardcoding.
+ */
 export async function fetchCodeforcesData(handle) {
   if (!handle) return null;
 
@@ -7,7 +12,7 @@ export async function fetchCodeforcesData(handle) {
     const [infoRes, ratingRes, statusRes] = await Promise.allSettled([
       axios.get(`https://codeforces.com/api/user.info?handles=${handle}`, { timeout: 10000 }),
       axios.get(`https://codeforces.com/api/user.rating?handle=${handle}`, { timeout: 10000 }),
-      axios.get(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=5000`, { timeout: 14000 })
+      axios.get(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=5000`, { timeout: 15000 })
     ]);
 
     if (infoRes.status !== 'fulfilled' || infoRes.value.data?.status !== 'OK') {
@@ -21,15 +26,18 @@ export async function fetchCodeforcesData(handle) {
     const ratingHistory = rawRatingHistory.map(h => ({
       ...h,
       platform: 'Codeforces',
+      contestName: h.contestName,
       rating: h.newRating,
       timestamp: h.ratingUpdateTimeSeconds,
       date: new Date(h.ratingUpdateTimeSeconds * 1000).toISOString()
     }));
+
     const submissions = statusRes.status === 'fulfilled' && statusRes.value.data?.status === 'OK'
       ? statusRes.value.data.result
       : [];
 
     const solvedIds = new Set();
+    const solvedNames = new Set();
     const topicCounts = {};
     const languageCounts = {};
     const heatmapCounts = {};
@@ -65,6 +73,7 @@ export async function fetchCodeforcesData(handle) {
       if (verdict === 'OK') {
         if (!solvedIds.has(probId)) {
           solvedIds.add(probId);
+          if (prob.name) solvedNames.add(prob.name.toLowerCase().trim());
           for (const t of tags) {
             topicCounts[t] = (topicCounts[t] || 0) + 1;
           }
@@ -88,6 +97,9 @@ export async function fetchCodeforcesData(handle) {
       max_rating: userInfo.maxRating || 0,
       rank: userInfo.rank || 'Unrated',
       total_solved: solvedIds.size,
+      contests_count: ratingHistory.length,
+      solved_problem_ids: Array.from(solvedIds),
+      solved_problem_names: Array.from(solvedNames),
       topic_counts: topicCounts,
       rating_history: ratingHistory,
       heatmap,

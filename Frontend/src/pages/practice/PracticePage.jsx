@@ -13,7 +13,7 @@ const PracticePage = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, openAuthModal, logout } = useAuthStore();
 
-  // Retrieve handles from URL query or localStorage
+  // Retrieve handles from URL query or localStorage with defaults
   const getStoredHandles = () => {
     let lc = searchParams.get('lc') || '';
     let cf = searchParams.get('cf') || '';
@@ -21,12 +21,44 @@ const PracticePage = () => {
     if (!lc && !cf && !cc) {
       try {
         const stored = JSON.parse(localStorage.getItem('algotrack_handles') || '{}');
-        lc = stored.lc || '';
-        cf = stored.cf || '';
-        cc = stored.cc || '';
-      } catch (e) {}
+        lc = stored.lc || 'chaitanya_garg_';
+        cf = stored.cf || 'chaitanyagarg2026';
+        cc = stored.cc || 'chaitanya_garg';
+      } catch (e) {
+        lc = 'chaitanya_garg_';
+        cf = 'chaitanyagarg2026';
+        cc = 'chaitanya_garg';
+      }
     }
     return { lc, cf, cc };
+  };
+
+  const getStarterTemplateForProblem = (prob, lang) => {
+    if (!prob) return '';
+    const isPy = lang === 'py' || lang === 'python';
+    const isCP = (prob.platform && (prob.platform.toLowerCase() === 'codeforces' || prob.platform.toLowerCase() === 'codechef')) ||
+                 (prob.source && (prob.source.toLowerCase() === 'codeforces' || prob.source.toLowerCase() === 'codechef'));
+
+    if (isCP) {
+      if (isPy) {
+        return `import sys\n\ndef solve():\n    # ✍️ Read from sys.stdin and print to sys.stdout\n    input_data = sys.stdin.read().split()\n    if not input_data: return\n    pass\n\nif __name__ == '__main__':\n    solve()\n`;
+      }
+      return `#include <bits/stdc++.h>\nusing namespace std;\n\nvoid solve() {\n    // ✍️ Write your CP solution here\n    // Read input using cin, print using cout\n    \n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int t = 1;\n    // cin >> t;\n    while (t--) {\n        solve();\n    }\n    return 0;\n}\n`;
+    }
+
+    // LeetCode Style
+    let code = isPy
+      ? (prob.starter_template_py || prob.starter_code?.python || prob.starter_code?.py || '')
+      : (prob.starter_template_cpp || prob.starter_code?.cpp || '');
+
+    // Strip any accidental main in LeetCode mode
+    if (!isPy && code) {
+      code = code.replace(/\n\nint main\(\)[\s\S]*$/, '');
+    } else if (isPy && code) {
+      code = code.replace(/\n\n# Test[\s\S]*$/, '').replace(/\n\nsol = Solution\(\)[\s\S]*$/, '');
+    }
+
+    return code;
   };
 
   const [handles, setHandles] = useState(getStoredHandles());
@@ -164,10 +196,7 @@ const PracticePage = () => {
           ? displayList.find(p => p.id === problemId) || displayList[0]
           : displayList[0];
         setCurrentProblem(matched);
-        const template = (language === 'py' || language === 'python')
-          ? (matched.starter_template_py || matched.starter_code?.python || matched.starter_code?.py || '')
-          : (matched.starter_template_cpp || matched.starter_code?.cpp || '');
-        setCode(template);
+        setCode(getStarterTemplateForProblem(matched, language));
         if (mode === 'revision') setLeftTab('solution');
       } else {
         setCurrentProblem(null);
@@ -188,10 +217,7 @@ const PracticePage = () => {
     const selected = problems.find(p => p.id === id);
     if (selected) {
       setCurrentProblem(selected);
-      const template = (language === 'py' || language === 'python')
-        ? (selected.starter_template_py || selected.starter_code?.python || selected.starter_code?.py || '')
-        : (selected.starter_template_cpp || selected.starter_code?.cpp || '');
-      setCode(template);
+      setCode(getStarterTemplateForProblem(selected, language));
       setDiagnosis(null);
       setTestResult(null);
       setActiveHintIndex(0);
@@ -224,20 +250,14 @@ const PracticePage = () => {
   const handleLanguageChange = (newLang) => {
     setLanguage(newLang);
     if (currentProblem) {
-      const template = (newLang === 'py' || newLang === 'python')
-        ? (currentProblem.starter_template_py || currentProblem.starter_code?.python || currentProblem.starter_code?.py || '')
-        : (currentProblem.starter_template_cpp || currentProblem.starter_code?.cpp || '');
-      if (template) setCode(template);
+      setCode(getStarterTemplateForProblem(currentProblem, newLang));
     }
   };
 
   // Reset starter template
   const handleResetCode = () => {
     if (currentProblem) {
-      const template = (language === 'py' || language === 'python')
-        ? (currentProblem.starter_template_py || currentProblem.starter_code?.python || currentProblem.starter_code?.py || '')
-        : (currentProblem.starter_template_cpp || currentProblem.starter_code?.cpp || '');
-      setCode(template);
+      setCode(getStarterTemplateForProblem(currentProblem, language));
       setTestResult(null);
     }
   };
@@ -296,7 +316,8 @@ const PracticePage = () => {
       const resp = await api.post('/run-code', {
         code,
         language,
-        testcases: cases
+        testcases: cases,
+        problem_id: currentProblem?.id || ''
       });
 
       const res = resp.data;
