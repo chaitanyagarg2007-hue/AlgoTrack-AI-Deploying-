@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { executeCodeInSandbox } from '../services/runner.js';
+import { fetchLeetCodePOTD, getUniversalProblemset } from '../services/problemset.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,26 +19,68 @@ try {
 }
 
 // =============================================================================
-// 1. PRACTICE PROBLEMS LIST WITH FILTERS
+// 1. LEETCODE POTD (Problem of the Day)
 // =============================================================================
-router.get('/practice-problems', (req, res) => {
-  const { topic, difficulty, platform } = req.query;
-
-  let filtered = [...problemsData];
-
-  if (topic && topic.toLowerCase() !== 'all') {
-    filtered = filtered.filter(p => p.topic?.toLowerCase() === topic.toLowerCase());
+router.get('/potd', async (req, res) => {
+  try {
+    const potd = await fetchLeetCodePOTD();
+    res.json(potd);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch POTD', detail: err.message });
   }
+});
 
-  if (difficulty && difficulty.toLowerCase() !== 'all') {
-    filtered = filtered.filter(p => p.difficulty?.toLowerCase() === difficulty.toLowerCase());
+// =============================================================================
+// 2. PRACTICE PROBLEMS LIST (Curated + Live Codeforces & CodeChef Stream)
+// =============================================================================
+router.get('/practice-problems', async (req, res) => {
+  const { topic = 'All', difficulty = 'All', platform = 'All', cf_handle = '', mode = 'all' } = req.query;
+
+  try {
+    // If specific non-LC platform or stream mode requested, fetch directly from universal stream
+    if (platform.toLowerCase() === 'codeforces' || platform.toLowerCase() === 'codechef' || mode === 'stream') {
+      const dynamicProblems = await getUniversalProblemset({
+        platform,
+        topic,
+        difficulty,
+        cfHandle: cf_handle,
+        limit: 12
+      });
+      return res.json(dynamicProblems);
+    }
+
+    // Otherwise, filter curated bank
+    let curatedFiltered = [...problemsData];
+
+    if (topic && topic.toLowerCase() !== 'all') {
+      curatedFiltered = curatedFiltered.filter(p => p.topic?.toLowerCase() === topic.toLowerCase());
+    }
+
+    if (difficulty && difficulty.toLowerCase() !== 'all') {
+      curatedFiltered = curatedFiltered.filter(p => p.difficulty?.toLowerCase() === difficulty.toLowerCase());
+    }
+
+    if (platform && platform.toLowerCase() !== 'all') {
+      curatedFiltered = curatedFiltered.filter(p => (p.platform || 'LeetCode').toLowerCase() === platform.toLowerCase());
+    }
+
+    // If "All", combine curated with fresh Codeforces & CodeChef live stream
+    if (platform.toLowerCase() === 'all') {
+      const streamExtras = await getUniversalProblemset({
+        platform: 'All',
+        topic,
+        difficulty,
+        cfHandle: cf_handle,
+        limit: 8
+      });
+      return res.json([...curatedFiltered, ...streamExtras]);
+    }
+
+    res.json(curatedFiltered);
+  } catch (err) {
+    console.error('Error fetching practice problems:', err);
+    res.json(problemsData);
   }
-
-  if (platform && platform.toLowerCase() !== 'all') {
-    filtered = filtered.filter(p => (p.platform || 'LeetCode').toLowerCase() === platform.toLowerCase());
-  }
-
-  res.json(filtered);
 });
 
 // =============================================================================

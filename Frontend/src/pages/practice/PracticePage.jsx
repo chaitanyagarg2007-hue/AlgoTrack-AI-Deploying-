@@ -76,6 +76,8 @@ const PracticePage = () => {
   const [currentProblem, setCurrentProblem] = useState(null);
   const [language, setLanguage] = useState('cpp');
   const [code, setCode] = useState('');
+  const [potd, setPotd] = useState(null);
+  const [copyStatus, setCopyStatus] = useState('');
   
   // Left pane tab ('desc', 'hints', 'solution')
   const [leftTab, setLeftTab] = useState('desc');
@@ -100,6 +102,21 @@ const PracticePage = () => {
     'Strings'
   ];
 
+  // ── Load LeetCode Daily POTD ──
+  useEffect(() => {
+    const fetchPOTD = async () => {
+      try {
+        const resp = await api.get('/potd');
+        if (resp.data && resp.data.title) {
+          setPotd(resp.data);
+        }
+      } catch (err) {
+        console.warn("Could not load POTD:", err.message);
+      }
+    };
+    fetchPOTD();
+  }, []);
+
   // ── Dynamic Multi-Platform Problem Loader ──
   const loadProblems = async (isNewBatch = false) => {
     try {
@@ -113,9 +130,12 @@ const PracticePage = () => {
       if (difficulty !== 'All') params.append('difficulty', difficulty);
       if (selectedTopic !== 'All') params.append('topic', selectedTopic);
       if (handles.lc) params.append('leetcode', handles.lc);
-      if (handles.cf) params.append('codeforces', handles.cf);
+      if (handles.cf) {
+        params.append('codeforces', handles.cf);
+        params.append('cf_handle', handles.cf);
+      }
       if (handles.cc) params.append('codechef', handles.cc);
-      if (isNewBatch) params.append('shuffle', 'true');
+      if (isNewBatch) params.append('mode', 'stream');
       params.append('page', targetPage.toString());
       params.append('limit', '30');
 
@@ -124,7 +144,7 @@ const PracticePage = () => {
       // Update solved state based on local marks
       const marked = (resp.data || []).map(p => ({
         ...p,
-        is_solved: p.is_solved || dismissedSet.has(p.id) || dismissedSet.has(p.title.toLowerCase())
+        is_solved: p.is_solved || dismissedSet.has(p.id) || dismissedSet.has(p.title?.toLowerCase())
       }));
 
       // Filter according to active mode
@@ -141,7 +161,10 @@ const PracticePage = () => {
           ? displayList.find(p => p.id === problemId) || displayList[0]
           : displayList[0];
         setCurrentProblem(matched);
-        setCode(matched.starter_code?.[language] || matched.starter_code?.cpp || '');
+        const template = (language === 'py' || language === 'python')
+          ? (matched.starter_template_py || matched.starter_code?.python || matched.starter_code?.py || '')
+          : (matched.starter_template_cpp || matched.starter_code?.cpp || '');
+        setCode(template);
         if (mode === 'revision') setLeftTab('solution');
       } else {
         setCurrentProblem(null);
@@ -162,7 +185,10 @@ const PracticePage = () => {
     const selected = problems.find(p => p.id === id);
     if (selected) {
       setCurrentProblem(selected);
-      setCode(selected.starter_code?.[language] || selected.starter_code?.cpp || '');
+      const template = (language === 'py' || language === 'python')
+        ? (selected.starter_template_py || selected.starter_code?.python || selected.starter_code?.py || '')
+        : (selected.starter_template_cpp || selected.starter_code?.cpp || '');
+      setCode(template);
       setDiagnosis(null);
       setTestResult(null);
       setActiveHintIndex(0);
@@ -176,7 +202,7 @@ const PracticePage = () => {
     if (!currentProblem) return;
     const newDismissed = new Set(dismissedSet);
     newDismissed.add(currentProblem.id);
-    newDismissed.add(currentProblem.title.toLowerCase());
+    if (currentProblem.title) newDismissed.add(currentProblem.title.toLowerCase());
     setDismissedSet(newDismissed);
     try {
       localStorage.setItem('algotrack_dismissed_solved', JSON.stringify(Array.from(newDismissed)));
@@ -194,17 +220,31 @@ const PracticePage = () => {
   // Handle language switch
   const handleLanguageChange = (newLang) => {
     setLanguage(newLang);
-    if (currentProblem && currentProblem.starter_code && currentProblem.starter_code[newLang]) {
-      setCode(currentProblem.starter_code[newLang]);
+    if (currentProblem) {
+      const template = (newLang === 'py' || newLang === 'python')
+        ? (currentProblem.starter_template_py || currentProblem.starter_code?.python || currentProblem.starter_code?.py || '')
+        : (currentProblem.starter_template_cpp || currentProblem.starter_code?.cpp || '');
+      if (template) setCode(template);
     }
   };
 
   // Reset starter template
   const handleResetCode = () => {
-    if (currentProblem && currentProblem.starter_code) {
-      setCode(currentProblem.starter_code[language] || currentProblem.starter_code.cpp || '');
+    if (currentProblem) {
+      const template = (language === 'py' || language === 'python')
+        ? (currentProblem.starter_template_py || currentProblem.starter_code?.python || currentProblem.starter_code?.py || '')
+        : (currentProblem.starter_template_cpp || currentProblem.starter_code?.cpp || '');
+      setCode(template);
       setTestResult(null);
     }
+  };
+
+  // 1-Click Copy Code
+  const handleCopyCode = () => {
+    if (!code) return;
+    navigator.clipboard.writeText(code);
+    setCopyStatus('Copied to Clipboard! ✓');
+    setTimeout(() => setCopyStatus(''), 2500);
   };
 
   // Run AI Diagnostics
@@ -470,6 +510,64 @@ const PracticePage = () => {
         </div>
       </nav>
 
+      {/* ── Today's LeetCode POTD Banner ── */}
+      {potd && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 24px',
+          background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(14, 14, 18, 0.9) 100%)',
+          borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
+          fontSize: '0.84rem',
+          color: '#e2e8f0',
+          flexWrap: 'wrap',
+          gap: '10px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ background: '#f59e0b', color: '#09090b', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', fontSize: '0.74rem', letterSpacing: '0.5px' }}>
+              🔥 LEETCODE POTD
+            </span>
+            <span style={{ fontWeight: 700, color: '#fef08a' }}>{potd.title}</span>
+            <span style={{
+              fontSize: '0.74rem',
+              fontWeight: 600,
+              color: potd.difficulty === 'Easy' ? '#34d399' : (potd.difficulty === 'Hard' ? '#f87171' : '#fbbf24'),
+              background: 'rgba(255,255,255,0.06)',
+              padding: '2px 8px',
+              borderRadius: '4px'
+            }}>
+              {potd.difficulty}
+            </span>
+            {(potd.tags || []).slice(0, 3).map((t, i) => (
+              <span key={i} style={{ fontSize: '0.72rem', color: '#94a3b8' }}>#{t}</span>
+            ))}
+          </div>
+
+          <a
+            href={potd.url}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              color: '#f59e0b',
+              textDecoration: 'none',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 12px',
+              borderRadius: '6px',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              background: 'rgba(245, 158, 11, 0.12)',
+              transition: 'all 0.2s'
+            }}
+          >
+            Solve Today's Challenge ↗
+          </a>
+        </div>
+      )}
+
       {/* ── Streamlined Filter Strip: Platform + Difficulty + Topics ── */}
       <div style={{ display: 'flex', gap: '10px', padding: '8px 20px', background: '#0e0e12', borderBottom: '1px solid #1f1f23', alignItems: 'center', flexWrap: 'wrap' }}>
         {/* 1. Platform Tabs */}
@@ -689,7 +787,7 @@ const PracticePage = () => {
               {/* Tab 1: Full Problem Statement */}
               {leftTab === 'desc' && (
                 <>
-                  <div className="problem-headline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <div className="problem-headline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                     <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#f8fafc', fontWeight: 700 }}>
                       {currentProblem.title}
                     </h2>
@@ -698,9 +796,32 @@ const PracticePage = () => {
                         href={currentProblem.url} 
                         target="_blank" 
                         rel="noreferrer"
-                        style={{ fontSize: '0.78rem', color: '#38bdf8', textDecoration: 'none', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '3px 8px', borderRadius: '4px' }}
+                        onClick={() => {
+                          if (code) {
+                            navigator.clipboard.writeText(code);
+                            setCopyStatus(`Code Copied! Opening ${currentProblem.platform || 'Platform'} ↗`);
+                            setTimeout(() => setCopyStatus(''), 3000);
+                          }
+                        }}
+                        style={{
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          color: '#ffffff',
+                          textDecoration: 'none',
+                          background: currentProblem.platform === 'Codeforces' 
+                            ? 'linear-gradient(135deg, #0284c7, #0369a1)' 
+                            : (currentProblem.platform === 'CodeChef' ? 'linear-gradient(135deg, #b45309, #78350f)' : 'linear-gradient(135deg, #f59e0b, #d97706)'),
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                          cursor: 'pointer'
+                        }}
+                        title="Open on official platform (Code is automatically copied to clipboard!)"
                       >
-                        Official Site ↗
+                        🚀 Solve on {currentProblem.platform || 'Platform'} ↗
                       </a>
                     )}
                   </div>
@@ -872,20 +993,48 @@ const PracticePage = () => {
           {/* Right Pane: Bug-Free Syntax Code Editor & Console Drawer */}
           <div className="arena-right-pane">
             <div className="editor-header-bar">
-              <div className="editor-filename-tab">
+              <div className="editor-filename-tab" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>Solution.{language === 'cpp' ? 'cpp' : 'py'}</span>
                 <span style={{ fontSize: '0.75rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                  {mode === 'revision' ? 'Revision Workspace' : 'Unsolved Template'}
+                  {mode === 'revision' ? 'Revision Workspace' : 'Interactive Scratchpad'}
                 </span>
+                {copyStatus && (
+                  <span style={{ fontSize: '0.75rem', color: '#34d399', background: 'rgba(52, 211, 153, 0.15)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                    {copyStatus}
+                  </span>
+                )}
               </div>
               
-              <button 
-                onClick={handleResetCode}
-                style={{ background: 'transparent', border: 'none', color: '#71717a', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                title="Reset Starter Template"
-              >
-                ↺ Reset Template
-              </button>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  onClick={handleCopyCode}
+                  style={{
+                    background: '#27272a',
+                    border: '1px solid #3f3f46',
+                    color: '#e4e4e7',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontWeight: 600,
+                    transition: 'background 0.2s'
+                  }}
+                  title="Copy current code to clipboard"
+                >
+                  📋 Copy Code
+                </button>
+
+                <button 
+                  onClick={handleResetCode}
+                  style={{ background: 'transparent', border: 'none', color: '#71717a', fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  title="Reset Starter Template"
+                >
+                  ↺ Reset
+                </button>
+              </div>
             </div>
 
             {/* Syntax-Aware Code Editor (Single-pass lexer, zero "token" leaks) */}
